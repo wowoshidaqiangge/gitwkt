@@ -206,10 +206,10 @@ export default {
        },
        addtool(){
            let arr = []
-           if(this.toollist.length<1){
-               this.$message.error('请先选择关联工具')
-               return
-           }
+        //    if(this.toollist.length<1){
+        //        this.$message.error('请先选择关联工具')
+        //        return
+        //    }
            this.toollist.map((item)=>{
                if(this.form.toolCodes.findIndex(v=> v==item.toolCode)!==-1){
                    arr.push(item)

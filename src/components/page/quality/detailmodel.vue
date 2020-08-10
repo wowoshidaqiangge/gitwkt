@@ -311,6 +311,11 @@ export default {
        marksure(ruleForm){
             this.$refs[ruleForm].validate(valid => {
                 if (valid) {
+                  Object.keys(this.form).forEach((item)=>{
+                    if(this.form[item]==='--'){
+                      delete this.form[item]
+                    }
+                  })
                     produceTaskQuality(this.form).then(res=>{
                         if(res.code==='0'){
                            this.$message.success(res.msg)

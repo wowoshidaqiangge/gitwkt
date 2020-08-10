@@ -38,14 +38,20 @@
         >
         </el-table-column>
        
-        <el-table-column label="操作" align="center" width="160">
+        <el-table-column label="操作"  width="220">
           <template slot-scope="scope">
-            <el-button type="success" v-if="$_has('PRODUCTUPDATE')" plain @click="handleagin(scope.row)"
+            <el-button type="success" v-if="$_has('PRODUCTUPDATE')&&scope.row.state===1" plain @click="handleagin(scope.row)"
               >修改</el-button
             >
-            <el-button type="warning" v-if="$_has('PRODUCTDELETE')" plain @click="handleUntie(scope.row)"
+            <el-button type="warning" v-if="$_has('PRODUCTDELETE')&&scope.row.state===1" plain @click="handleUntie(scope.row)"
               >删除</el-button
             >
+             <el-button type="danger" v-if="scope.row.state===1" plain @click="handledelete(scope.row)"
+              >禁用</el-button>
+              <el-button type="danger" disabled v-if="scope.row.state===0" plain 
+              >已禁用</el-button>
+              <el-button type="info" v-if="scope.row.state===0&&scope.row.validCopy==0" plain @click="handlecopy(scope.row)"
+              >复制</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -60,7 +66,7 @@
         </el-pagination>
       </div>
     </div>
-    <Modal :dialogFormVisible="dialogFormVisible" ref="productmodal" :tit="tit" @close="close" />
+    <Modal :dialogFormVisible="dialogFormVisible" ref="productmodal" :tit="tit" @close="close" @iscopy="iscopy"/>
     <excelModal
       ref="excelModal"
       :title="excel.title"
@@ -72,7 +78,7 @@
 </template>
 
 <script>
-import { productPage, productDelete } from 'api/product';
+import { productPage, productDelete,productupdateStateById,productPost,productInfo } from 'api/product';
 import Modal from './modal';
 export default {
   name: 'product',
@@ -100,7 +106,7 @@ export default {
         { prop: 'productCode', label: '产品编码' },
         { prop: 'model', label: '规格型号' },
         { prop: 'productType', label: '产品类型' },
-        { prop: 'workKind', label: '基本单位' },
+        { prop: 'unit', label: '基本单位' },
         { prop: 'partCodes', label: '关联零件&标准件' },
         { prop: 'workprocessCodes', label: '关联工序' },
         { prop: 'deptName', label: '所属部门' },
@@ -110,7 +116,8 @@ export default {
       excel: {
         title: '导入零件',
         dialogExcelVisible: false
-      }
+      },
+      copyid:'',
     };
   },
   created() {
@@ -119,7 +126,7 @@ export default {
   mounted() {},
   computed: {},
   methods: {
-   
+    
     // 数据列表
     getproductPage() {
       this.loading = true
@@ -172,6 +179,38 @@ export default {
       this.tit = '修改产品';
       this.$refs.productmodal.getproductInfo(info);
       this.dialogFormVisible = true;
+    },
+    handlecopy(info){
+      this.copyid = info.id
+       this.$refs.productmodal.getproductInfo(info,true);
+    },
+    iscopy(val){
+      debugger
+      delete val.createTime
+      delete val.state
+      val.id = this.copyid
+      val.isCopy = true
+       productPost(val).then(v=>{
+              if(v.code==='0'){
+                debugger
+              }
+            })
+    },
+    // 禁用
+    handledelete(info){
+       this.$confirm('确定要禁用吗？', '提示', {
+        type: 'warning'
+      })
+        .then(() => {
+          productupdateStateById({ id: info.id, state: 0 }).then(res => {
+            if (res.code === '0') {
+              this.$message.success(res.msg);
+              this.getproductPage();
+            }
+          });
+        })
+        .catch(() => {});
+      
     },
     //删除
     handleUntie(info) {

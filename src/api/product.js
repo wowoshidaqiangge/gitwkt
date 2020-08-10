@@ -71,6 +71,16 @@ export const productPost = query => {
   });
 };
 
+//产品禁用
+export const productupdateStateById = query => {
+  return request({
+    url: `/api/item/product/updateStateById`,
+    method: 'put',
+    data: query
+  });
+};
+
+
 // 产品类别列表
 
 export const productTypeList = query => {

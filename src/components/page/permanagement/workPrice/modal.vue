@@ -14,12 +14,13 @@
                     <el-col :span="11">
                         <el-form-item label="物料选择" :label-width="formLabelWidth" prop="press">
                                 <el-select v-model="form.press" 
-                                 class="setwidth" @change="changesel" :filter-method="dataFilter" filterable placeholder="请选择">
+                                 class="setwidth" @change="changesel" :filter-method="dataFilter" filterable placeholder="请输入物料名称或编码">
                                     <el-option
                                     v-for="item in optionstype"
                                     :key="item.itemCode"
                                     :label="item.itemName"
                                     :value="item.itemCode">
+                                    {{item.itemName}}_{{item.itemCode}}
                                     </el-option>
                                 </el-select>
                         </el-form-item>
@@ -84,20 +85,20 @@
                  <el-col style="padding:25px 10px 0 10px;border:1px dashed #ccc">
                   
                      <el-col :span="11">
-                         <el-form-item label="合格品单价" :label-width="formLabelWidth" prop='qualifiedPrice'>
-                                    <el-input v-model="form.qualifiedPrice" class="setwidth1"></el-input>
+                         <el-form-item label="合格P" :label-width="formLabelWidth" prop='qualifiedPrice'>
+                                    <el-input v-model="form.qualifiedPrice" class="setwidth1" @keyup.native="form.qualifiedPrice =form.qualifiedPrice.replace(/[^\d.]/g,'')" ></el-input>
                                     <span style="margin-left:10px;letter-spacing:2px">元/件</span>
                             </el-form-item>
                          </el-col>
                          <el-col :span="11">
-                            <el-form-item label="让步工单价" :label-width="formLabelWidth" prop='concessionPrice'>
-                                    <el-input v-model="form.concessionPrice" class="setwidth1"></el-input>
+                            <el-form-item label="让步工H" :label-width="formLabelWidth" prop='concessionPrice'>
+                                    <el-input v-model="form.concessionPrice" class="setwidth1" @keyup.native="form.concessionPrice =form.concessionPrice.replace(/[^\d.]/g,'')" ></el-input>
                                     <span style="margin-left:10px;letter-spacing:2px">元/件</span>
                             </el-form-item>
                          </el-col>
                          <el-col :span="11">
-                            <el-form-item label="降级工单价" :label-width="formLabelWidth" prop='demotionPrice'>
-                                    <el-input v-model="form.demotionPrice" class="setwidth1"></el-input>
+                            <el-form-item label="降级工C" :label-width="formLabelWidth" prop='demotionPrice'>
+                                    <el-input v-model="form.demotionPrice" class="setwidth1" @keyup.native="form.demotionPrice =form.demotionPrice.replace(/[^\d.]/g,'')" ></el-input>
                                     <span style="margin-left:10px;letter-spacing:2px">元/件</span>
                             </el-form-item>
                     </el-col>
@@ -158,45 +159,7 @@ export default {
                     //     trigger: 'change'
                     // }
                 ],
-                qualifiedPrice:[
-                    {
-                        validator(rule, value, callback) {
-                        var reg = /^[0-9]+(\.?[0-9]+)?$/
-                        if (reg.test(value)) {
-                            callback()
-                        } else {
-                            callback(new Error('价格必须为整数或小数'))
-                        }
-                        },
-                        trigger: 'change'
-                    }
-                ],
-                demotionPrice:[
-                    {
-                        validator(rule, value, callback) {
-                        var reg = /^[0-9]+(\.?[0-9]+)?$/
-                        if (reg.test(value)) {
-                            callback()
-                        } else {
-                            callback(new Error('价格必须为整数或小数'))
-                        }
-                        },
-                        trigger: 'change'
-                    }
-                ],
-                concessionPrice:[
-                    {
-                        validator(rule, value, callback) {
-                        var reg = /^[0-9]+(\.?[0-9]+)?$/
-                        if (reg.test(value)) {
-                            callback()
-                        } else {
-                            callback(new Error('价格必须为整数或小数'))
-                        }
-                        },
-                        trigger: 'change'
-                    }
-                ]
+               
             },
             optionstype:[],
             copy:[],
@@ -300,6 +263,9 @@ export default {
        marksure(ruleForm){
             this.$refs[ruleForm].validate((valid) => {
                 if (valid) {
+                    if(!this.form.timePrice){
+                        delete this.form.timePrice
+                    }
                     if(this.tit==="新增工价"){
                        workpricepost(this.form).then(res=>{
                            if(res.code==='0'){

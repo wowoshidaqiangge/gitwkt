@@ -371,6 +371,15 @@ export default {
                                 if(item.cNums!==undefined){
                                     item.cNums = '--'
                                 }
+                            }else{
+                                 if(this.isdaogui){
+                                        if(item.qualified!==undefined){
+                                            item.qualified = '--'
+                                        }
+                                        if(item.unQualified!==undefined){
+                                            item.unQualified = '--'
+                                        }
+                                    }
                             }
                         }else{
                             if(item.qualified!==undefined){
@@ -379,9 +388,7 @@ export default {
                             if(item.unQualified!==undefined){
                                 item.unQualified = '--'
                             }
-                            if(item.remark!==undefined){
-                                item.remark = '--'
-                            }
+                           
                         }
                   })
                   this.pagesize = parseInt(res.data.current)

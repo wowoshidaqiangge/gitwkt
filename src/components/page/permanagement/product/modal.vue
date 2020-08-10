@@ -318,7 +318,7 @@ export default {
     },
     methods: {
         // 产品详情
-        getproductInfo:async function (info){
+        getproductInfo:async function (info,iscopy){
            await productInfo({id:info.id,type:1}).then(res=>{
                 if(res.code ==='0'){
                     this.getpartList({deptId:res.data.deptId})
@@ -327,6 +327,8 @@ export default {
                     let arr1 = []
                     let arr2 = []
                     let arr3 = []
+                  
+                   
                     res.data.productType1 = res.data.productTypeId
                     res.data.type = 1
                     res.data.partList.map((item)=>{
@@ -337,17 +339,22 @@ export default {
                         arr.push([res.data.standardPart,item.partCode])
                         arr1.push(item.id)
                     })
+                    
                      res.data.workprocessList.map((item)=>{
+                    
                         arr2.push(item.workprocessCode)
                         arr3.push(item.workprocessName)
+                        if(item.workprocessName==="完工"&&item.workprocessType=="5"){
+                             this.isover = true
+                        }
                     })
-                    console.log(arr)
+                
                     this.checkedCities = arr2
                     this.citiesName = arr3
                     this.form = res.data
                     this.form.toolIds = arr
                     this.productCode = res.data.productCode
-                    this.addtool(arr1,res.data.productCode)
+                    this.addtool(arr1,res.data.productCode,iscopy)
                 }
             })
         },
@@ -435,7 +442,7 @@ export default {
            })
        },
        // 新增
-       addtool(info,code){
+       addtool(info,code,iscopy){
            let arr = []
            let obj = {}
            if(Array.isArray(info)){
@@ -457,6 +464,10 @@ export default {
                        item.partCount = item.partCount===''? 1 :item.partCount
                    })
                    this.tableData = res.data
+                   if(iscopy){
+                       let obj = {...this.form,part:this.tableData,workprocessCodes:this.checkedCities}
+                       this.$emit('iscopy',obj)
+                   }
                }
            })
        },
@@ -501,6 +512,7 @@ export default {
                        }
                        let obj = {...this.form,part:this.tableData,workprocessCodes:this.checkedCities}
                        if(this.tit==="新增产品"){
+                           obj.isCopy = false
                            productPost(obj).then(res=>{
                                 if(res.code==='0'){
                                     this.$message.success(res.msg)

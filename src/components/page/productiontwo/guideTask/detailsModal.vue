@@ -241,10 +241,10 @@ export default {
             tablelist:[],
             formLabelWidth:'80px',
             columnlist:[
-                {label:'派工人员',prop:'assignUser',width:"70px"},
+                {label:'派工人员',prop:'createUser',width:"70px"},
                 {label:'派工日期',prop:'createTime'},
                 {label:'设备编号',prop:'deviceNumber'},
-                {label:'工作人员',prop:'createUser',width:"70px"},
+                {label:'工作人员',prop:'assignUser',width:"70px"},
                 {label:'结算方式',prop:'accountType1',width:"50px"},
                 {label:'计时工价',prop:'timePrice',width:"50px"},
                 {label:'计时时间',prop:'manHour',width:"50px"},
@@ -268,7 +268,7 @@ export default {
                
             ],
             columnlist3:[
-                {label:'工作人员',prop:'createUser',width:"80px"},
+                {label:'工作人员',prop:'assignUser',width:"80px"},
                 {label:'设备编号',prop:'deviceNumber'},
                 {label:'派件数量',prop:'assignCount',width:"80px"},
             ],
@@ -357,10 +357,6 @@ export default {
                                     if(item.unQualified!==undefined){
                                         item.unQualified = '--'
                                     }
-                                    if(item.remark!==undefined){
-                                        item.remark = '--'
-                                    }
-                                
                                 }
                             })
                             this.pagesize = parseInt(res.data.current)
