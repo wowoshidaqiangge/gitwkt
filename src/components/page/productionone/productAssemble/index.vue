@@ -56,9 +56,10 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" align="center">
+          <el-table-column label="操作" width="110" align="center">
             <template slot-scope="scope">
-              <el-button type="add" plain v-if="scope.row.state != 6" @click="handleDetails(scope.$index, scope.row)">派单
+              <el-button type="add" plain v-if="scope.row.state != 6" @click="handleDetails(scope.$index, scope.row)">
+                加工路线
               </el-button>
             </template>
           </el-table-column>
@@ -88,6 +89,7 @@ export default {
       isdetails: false,
       dateValue: '',  // 日期范围
       options: [
+        // { value: '', label: '全部' },
         { value: '1', label: '未派单' },
         { value: '2', label: '未领单' },
         { value: '3', label: '生产中' },
@@ -95,7 +97,7 @@ export default {
         // { value: '4', label: '装配' },
         { value: '5', label: '已完工' },
         { value: '6', label: '已锁定' },
-        { value: '7', label: '已解锁' },
+        // { value: '7', label: '已解锁' },
       ],
       seachinfo: {
         state: '',
@@ -137,7 +139,6 @@ export default {
 
   created() {
     this.getTableData();
-
   },
   methods: {
     seachinfo1() {

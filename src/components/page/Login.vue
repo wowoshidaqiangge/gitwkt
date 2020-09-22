@@ -1,7 +1,7 @@
 <template>
   <div class="login-wrap">
     <div class="ms-login">
-      <div class="ms-title">威肯特生产管理系统</div>
+      <div class="ms-title">联通5G全连接工厂管理平台</div>
       <el-form :model="param" ref="login" label-width="0px" class="ms-content">
         <el-form-item prop="username">
           <el-input
@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { login } from 'api/index';
+import { login, userListMenu } from 'api/index';
 import { mapActions, mapState } from 'vuex';
 import bus from './../common/bus';
 export default {
@@ -51,7 +51,8 @@ export default {
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
       },
-      isshow: false
+      isshow: false,
+      enter: []
     };
   },
   mounted() {
@@ -69,7 +70,7 @@ export default {
   methods: {
     ...mapActions(['handleLogin']),
 
-    submitForm(id) {
+    async submitForm(id) {
       var that = this;
       this.$refs.login.validate(valid => {
         if (valid) {
@@ -89,31 +90,45 @@ export default {
             sessionStorage.setItem('ms_username', res.username);
             sessionStorage.setItem('password', res.password);
             sessionStorage.setItem('TagsList', '');
-            res.roleId = parseInt(res.roleId);
-            if (res.roleId >= 1100 && res.roleId <= 1199) {
-              // bus.$emit('isman', true);
-              this.$router.replace('/headman');
-            } else {
-              this.$router.replace('/');
-            }
+            this.enter = [];
+            this.getMenuData(res.id, res.roleId);
           });
-
-          // login(this.param).then(res=>{
-          //  if(res.code==='0'){
-          //       this.$message.success('登录成功');
-          //      sessionStorage.setItem('userId', res.data.id);
-          //      sessionStorage.setItem('ms_username', res.data.username);
-          //      this.$router.push('/')
-          //  }
-          // })
-          // this.$message.success('登录成功');
-          // sessionStorage.setItem('ms_username', this.param.username);
-          // this.$router.push('/')
         } else {
           this.$message.error('请输入账号和密码');
           console.log('error submit!!');
           return false;
         }
+      });
+    },
+    getMenuData(uid, rid) {
+      userListMenu({
+        userId: uid,
+        type: 'menu'
+      }).then(res => {
+        if (res.code == '0') {
+          for (let item of res.data) {
+            if (item.id == '208') {
+              this.enter.unshift('/bigscreenfirst');
+            }
+            if (item.id == '209') {
+              this.enter.push('/bigscreensecond');
+            }
+          }
+          if (Array.isArray(res.data[0].children) && res.data[0].children.length > 0) {
+            this.enter.push('/' + res.data[0].children[0].obj.index);
+          } else {
+            this.enter.push('/');
+          }
+        } else {
+          this.enter.push('/');
+        }
+        rid = parseInt(rid);
+        if (rid >= 1100 && rid <= 1199) {
+          this.$router.replace('/headman');
+        } else {
+          this.$router.replace(this.enter[0]);
+        }
+        // console.log(rid, this.enter);
       });
     }
   }

@@ -52,6 +52,18 @@ export const workprocessdelete = query => {
   });
 };
 
+// 工序导入
+export const saveListpost = query => {
+  return request({
+    url: `/api/item/workprocess/saveList`,
+    method: 'post',
+    data: query,
+   
+  });
+};
+
+
+
 // 产品管理 导轨分页
 export const productPage = query => {
   return request({
@@ -164,6 +176,18 @@ export const workpricedelete = query => {
     data: query
   });
 };
+//工价导入
+export const workpricesaveList = query => {
+  return request({
+    url: `/api/item/workprice/saveList`,
+    method: 'post',
+    data: query,
+   
+  });
+};
+
+
+
 //物料列表查询
 export const getItemList = query => {
   return request({
@@ -519,6 +543,14 @@ export const qualityConfig = query => {
   return request({
     url: `/api/producetask/qualityConfig`,
     method: 'post',
+    data: query
+  });
+};
+//导轨质检  质检配置修改
+export const qualityConfigput = query => {
+  return request({
+    url: `/api/producetask/qualityConfig`,
+    method: 'put',
     data: query
   });
 };

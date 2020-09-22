@@ -62,9 +62,10 @@ export default {
         let obj = {};
         obj.productName = JSON.parse(JSON.stringify(item))['物料名称'];
         obj.productCode = JSON.parse(JSON.stringify(item))['物料编码'];
+        obj.productType = JSON.parse(JSON.stringify(item))['物料类别'];
         obj.model = JSON.parse(JSON.stringify(item))['规格型号'];
         obj.unit = JSON.parse(JSON.stringify(item))['基本单位'];
-        obj.workprocessCodes = JSON.parse(JSON.stringify(item))['关联工序（多个工序，中间用顿号（、）隔开）'].split(
+        obj.workprocessCodes = JSON.parse(JSON.stringify(item))['关联工序编码（多个工序，中间用顿号（、）隔开）'].split(
           '、'
         );
         obj.deptName = JSON.parse(JSON.stringify(item))['所属部门'];

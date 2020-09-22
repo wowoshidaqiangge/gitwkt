@@ -57,14 +57,15 @@
                             align="center"
                         >
                         </el-table-column>
-                        <el-table-column label="操作" align="center">
+                        <el-table-column label="查看" align="center">
                                     <template slot-scope="scope">
                                         <el-button
                                             type="add"
                                             plain
+                                            v-if="$_has('PARTQUALITYOPERATION')"
                                             class="red"
                                             @click="handledistribute( scope.row)"
-                                        >查看</el-button>
+                                        >加工路线</el-button>
                                     </template>
                             </el-table-column>
                 </el-table>
@@ -108,7 +109,7 @@ export default {
                 {label:"未派单",value:1},
                 {label:"未领单",value:2},
                 {label:"生产中",value:3},
-                {label:"装配",value:4},
+                // {label:"装配",value:4},
                 {label:"已完工",value:5},
                 {label:"已锁定",value:6}
               
@@ -120,7 +121,7 @@ export default {
             columnlist:[
                 {label:'序号',prop:"index"},
                 {label:'生产部门',prop:"deptName"},
-                {label:'装配工单',prop:"taskNumber"},
+                {label:'生产工单',prop:"taskNumber"},
                 {label:'物料编码',prop:"itemCode"},
                 {label:'物料名称',prop:"itemName"},
                 {label:'规格型号',prop:"model"},

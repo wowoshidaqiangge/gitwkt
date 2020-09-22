@@ -26,32 +26,30 @@
           <div style="margin:0 15px">
             <el-button type="add" icon="el-icon-search" @click="seachinfo1">搜索</el-button>
             <el-button type="success" icon="el-icon-refresh-right" @click="resetting">重置</el-button>
+            <el-button type="add" @click="handleExcel">EXCEL导出</el-button>
           </div>
         </el-row>
       </el-form>
 
     </div>
     <div class="bot">
-      <el-table :data="tableData" stripe style="width: 100%">
-        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label"
-          align="center">
+      <el-table :data="tableData" border stripe style="width: 100%">
+        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label" align="center">
         </el-table-column>
-        <el-table-column label="操作" width="160" align="center">
+        <el-table-column label="操作" align="center">
           <template slot-scope="scope">
             <el-button type="info" plain v-if=" $_has('TOOLUPDATE')" @click="handleEdit(scope.$index, scope.row)">修改
             </el-button>
-            <el-button type="danger" plainclass="red" v-if=" $_has('TOOLDELETE')"
-              @click="handledistribute(scope.$index, scope.row)">删除</el-button>
+            <el-button type="danger" plainclass="red" v-if=" $_has('TOOLDELETE')" @click="handledistribute(scope.$index, scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
     <div class="page">
-      <el-pagination :background="true" :current-page.sync="pagesize" @current-change="handleCurrentChange"
-        layout="total, prev, pager, next" :total="pageTotal" :page-size="page.size">
+      <el-pagination :background="true" :current-page.sync="pagesize" @current-change="handleCurrentChange" layout="total, prev, pager, next" :total="pageTotal" :page-size="page.size">
       </el-pagination>
     </div>
-    <toolModal :dialogFormVisible="dialogFormVisible" @close='close' :title='title' ref="toolmodal"></toolModal>
+    <toolModal :dialogFormVisible="dialogFormVisible" @close='close' :title='title' ref="toolmodal1"></toolModal>
     <toolExcel :dialogExcelVisible="dialogExcelVisible" @close='close' :title='title'></toolExcel>
   </div>
 </template>
@@ -60,6 +58,8 @@
 import { toolpage, tooldelete } from 'api/tool'
 import toolModal from './toolmodal'
 import toolExcel from './toolexcel'
+import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'tool',
   components: {
@@ -67,14 +67,14 @@ export default {
   },
   data() {
     return {
-      roleId:sessionStorage.getItem('roleId'),
+      roleId: sessionStorage.getItem('roleId'),
       dialogFormVisible: false,
       dialogExcelVisible: false,
       title: '',
       seachinfo: {
         toolNameOrCode: '',
       },
-      deptoption:[
+      deptoption: [
         { value: '7', label: '生产一部' },
         { value: '8', label: '生产二部' },
       ],
@@ -105,6 +105,13 @@ export default {
   watch: {},
   computed: {},
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.tableData, `工具管理-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     add() {
       this.title = '新增工具';
       this.dialogFormVisible = true;
@@ -118,14 +125,14 @@ export default {
       this.getTableData()
     },
     resetting() {
-      this.seachinfo = { toolNameOrCode: '',deptId:'' };
+      this.seachinfo = { toolNameOrCode: '', deptId: '' };
       this.page.current = 1;
       this.getTableData();
     },
     //修改
     handleEdit(h, m) {
       this.title = '修改工具';
-      this.$refs.toolmodal.getToolForm(m);
+      this.$refs.toolmodal1.getToolForm(m);
       this.dialogFormVisible = true;
     },
     handledistribute(h, m) {

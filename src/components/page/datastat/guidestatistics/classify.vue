@@ -10,7 +10,7 @@
                 <el-option
                   v-for="item in options"
                   :key="item.productModel"
-                  :label="item.productName"
+                  :label="item.productModel"
                   :value="item.productModel">
                 </el-option>
               </el-select>
@@ -33,7 +33,6 @@
           </div>
           <div style="flex:1">
             <el-button type="primary" style="float:right"  @click="handleExcel">EXCEL导出</el-button>
-            
           </div>
         </el-row>
       </el-form>
@@ -42,7 +41,15 @@
           <el-table
           :data="tableData"
           border
+          max-height="500px"
           style="width: 100%">
+              <el-table-column 
+              prop="rankName" 
+              fixed
+              label="型号"
+              width="120px"
+              align="center">
+              </el-table-column>
               <el-table-column 
               v-for="(item, index) in columnlist" 
               :key="index" 
@@ -55,11 +62,11 @@
       </div>
       <div >
         <h2 style="margin:20px 0">{{typeof(value2)=='string'?value2.split('-')[1]:value2}}月汇总分布图</h2>
-        <div style="height:400px">
+        <div style="height:580px">
            <div style="float:left;width:25%">
               <el-table
               :data="tableList"
-              :max-height="400"
+              :max-height="550"
               border
               style="width: 100%">
                   <el-table-column 
@@ -73,7 +80,7 @@
               </el-table>
            </div>
            <div style="float:left;width:75%"> 
-              <ve-histogram :data="chartData" :settings="chartSettings" :extend="extend" :grid="grid" :legend-visible="false"></ve-histogram>
+              <ve-histogram height="550px" :data="chartData" :settings="chartSettings" :extend="extend" :grid="grid" :legend-visible="false"></ve-histogram>
            </div>
         </div>
         
@@ -121,11 +128,11 @@ export default {
         load:false,
         nowMonth:moment(new Date()).format("YYYY-MM"),
         options:[],
-        productModel:'',
+        productModel:'全部',
         tableList:[],
         columnlist1:[
           {label:'名称',prop:'rankName'},
-          {label:'数量',prop:'rankCount'},
+          {label:'数量',prop:'rankCount',width:'60px'},
           {label:'名称',prop:'rankNameradio'},
           {label:'占比率',prop:'rankCountRatio'},
         ]
@@ -150,6 +157,7 @@ export default {
       this.getGuideQualityListByMonth()
     },
     changesel(val){
+    
       this.getGuideQualityListByDay()
       this.getGuideQualityListByMonth()
     },
@@ -157,6 +165,7 @@ export default {
     getGuideModelList(){
       getGuideModelList().then(res=>{
         if(res.code ==='0'){
+          res.data.unshift({productModel:"全部"})
           this.options = res.data
         }
       })
@@ -172,7 +181,7 @@ export default {
       getGuideQualityListByDay({monthParam:this.value2,productModel:this.productModel}).then(res=>{
         this.load = false
         if(res.code==='0'){
-          let arr = [{label:'型号',prop:'rankName',width:'100px'}]
+          let arr = []
           let obj = {rankName:'报检数量'}
           let arr1 = JSON.parse(JSON.stringify(res.data))
           res.data.map((item,de)=>{
@@ -183,20 +192,31 @@ export default {
                       obj[`time${index}`] =  v.dayTotal
                    }
               }
-              if(v.rankCount){
-                item[`time${index}`] =  v.rankCount
+              if(item.rankName==="不合格占比"){
+                if(v.rankDayCountRatio){
+                  item[`time${index}`] = v.rankDayCountRatio
+                }
+              }else{
+                if(v.rankCount){
+                  item[`time${index}`] =  v.rankCount
+                }
               }
             })
           })
           arr1.map((item)=>{
-               item.rankName = item.rankName+'占比'
-               item.guideQualityList.map((v,index)=>{
+            if(item.rankName==="P级"){
+              item.rankName = "合格率占比"
+            }else {
+              item.rankName = item.rankName+'占比'
+            }
+               
+            item.guideQualityList.map((v,index)=>{
                 if(v.rankDayCountRatio){
                   item[`time${index}`] = v.rankDayCountRatio
                 }
               })
-          })
-          console.log(arr1,res.data)
+           })
+          arr1.pop()
           res.data.unshift(obj)
           this.columnlist = arr
           this.tableData = [...res.data,...arr1]
@@ -251,7 +271,6 @@ export default {
             },
           }
           this.grid = {
-            
             top:10,
             left: 20,
             bottom:10
@@ -269,8 +288,8 @@ export default {
 };
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .classify {
-  
+
 }
 </style>

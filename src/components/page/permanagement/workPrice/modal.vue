@@ -196,7 +196,6 @@ export default {
             this.form.timePrice = e
         },
        dataFilter(val) {
-           
             if (val) { //val存在
                 this.optionstype = this.copy.filter((item) => {
                     if (item.itemCode.indexOf(val)!==-1 || item.itemName.indexOf(val)!==-1) {

@@ -28,6 +28,9 @@
           <el-col :span="2">
             <el-button @click="search">查询</el-button>
           </el-col>
+          <div style="flex:1">
+            <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+          </div>
         </el-row>
 
       </el-form>
@@ -47,6 +50,8 @@
 
 </template>
 <script>
+import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { staffCPK } from 'api/tool'
@@ -63,6 +68,7 @@ export default {
         userName: ''
       },
       tableData: [],
+      excelData: [],  //导出excel表格用的tableData
       columnlist: [
         { prop: 'taskNumber', label: '生产工单' },
         { prop: 'itemCode', label: '物料编号' },
@@ -91,7 +97,35 @@ export default {
     this.getTableData();
   },
   methods: {
-
+    // 导出EXCEL
+    handleExcel: async function () {
+      await this.getExcelData()
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.excelData, `员工CPK-${time}`)
+      // .then(() => {
+      //   this.$message.success('导出成功');
+      // })
+    },
+    getExcelData: async function () {
+      let dayTime = {}
+      if (this.date) {
+        dayTime = {
+          startTime: this.date[0],
+          endTime: this.date[1]
+        }
+      } else {
+        dayTime = {
+          startTime: '',
+          endTime: ''
+        }
+      }
+      let obj = { ...this.seachinfo, ...dayTime, current: 1, size: 9999 }
+      await staffCPK(obj).then(res => {
+        if (res.code === '0') {
+          this.excelData = res.data.records
+        }
+      })
+    },
     getTableData() {
       let dayTime = {}
       if (this.date) {
@@ -112,7 +146,6 @@ export default {
           this.totals = parseInt(res.data.total)
         }
       })
-
     },
     getSummaries(param) {
       const { columns, data } = param;
@@ -170,6 +203,7 @@ export default {
 .staffCPK {
   width: 100%;
   height: auto;
+  position: relative;
   .box {
     width: 100%;
   }

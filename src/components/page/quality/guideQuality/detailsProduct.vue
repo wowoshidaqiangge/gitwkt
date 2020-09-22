@@ -10,7 +10,7 @@
             <div class="infolist">
                 <div class="info" v-for="(item,index) in prolist" :key="index">
                     <p><span>{{item.name}}：</span></p>
-                    <p>{{item.value}}</p>
+                    <p :title="item.value" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{item.value}}</p>
                 </div>
                
             </div>
@@ -29,13 +29,13 @@
                                 width="50px"
                             >  
                         </el-table-column>   
-                        <el-table-column
+                        <!-- <el-table-column
                                     prop="taskNumber"
                                     label="生产工单号"
                                     align="center"
                                
                             >  
-                        </el-table-column> 
+                        </el-table-column>  -->
                         <el-table-column label="加工内容" align="center">
                             <el-table-column
                                     prop="workKind"
@@ -123,13 +123,13 @@
                                 width="50px"
                             >  
                         </el-table-column>  
-                        <el-table-column
+                        <!-- <el-table-column
                                     prop="taskNumber"
                                     label="生产工单号"
                                     align="center"
                                
                             >  
-                        </el-table-column>  
+                        </el-table-column>   -->
                          
                         <el-table-column label="加工内容" align="center">
                             <el-table-column
@@ -338,10 +338,11 @@ export default {
       },
       // 获取详情
       getproduceTaskdetail(info){
+         
           let pro = JSON.parse(JSON.stringify(info))
           this.wayinfo = pro
           let arr = [
-              {name:"产品任务单",value:pro.taskNumber},
+              {name:"生产工单号",value:pro.taskNumber},
               {name:"物料编码",value:pro.itemCode},
               {name:"物料名称",value:pro.itemName},
               {name:"规格型号",value:pro.model},
@@ -355,42 +356,11 @@ export default {
               {name:"备注",value:pro.remark},
           ]
           this.prolist = arr
-          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId}).then(res=>{
+          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId,state:pro.state}).then(res=>{
               if(res.code==='0'){
                 //   let index1 = 0
                   handle(res.data.records) 
-                  res.data.records.map((item,index)=>{
-                        if(item.workprocessType!=6){
-                            if(item.workprocessType!=5){
-                                if(item.pNums!==undefined){
-                                item.pNums = '--'
-                                }
-                                if(item.hNums!==undefined){
-                                    item.hNums = '--'
-                                }
-                                if(item.cNums!==undefined){
-                                    item.cNums = '--'
-                                }
-                            }else{
-                                 if(this.isdaogui){
-                                        if(item.qualified!==undefined){
-                                            item.qualified = '--'
-                                        }
-                                        if(item.unQualified!==undefined){
-                                            item.unQualified = '--'
-                                        }
-                                    }
-                            }
-                        }else{
-                            if(item.qualified!==undefined){
-                                item.qualified = '--'
-                            }
-                            if(item.unQualified!==undefined){
-                                item.unQualified = '--'
-                            }
-                           
-                        }
-                  })
+                  
                   this.pagesize = parseInt(res.data.current)
                   this.totals = parseInt(res.data.total)
                   this.tablelist =  res.data.records

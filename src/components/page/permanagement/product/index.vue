@@ -1,6 +1,5 @@
 <template>
-  <div class="product" v-loading="loading" element-loading-text="拼命加载中"
-    element-loading-spinner="el-icon-loading">
+  <div class="product" v-loading="loading" element-loading-text="拼命加载中" element-loading-spinner="el-icon-loading">
     <div class="top">
       <el-form :model="seachinfo" ref="seachinfo" class="demo-ruleForm">
         <el-row type="flex" justify="end">
@@ -8,7 +7,7 @@
             <el-button type="add" v-if="$_has('PRODUCTADD')" icon="el-icon-circle-plus-outline" @click="add"
               >新增</el-button
             >
-            <el-button type="add" @click="handleExcel">EXCEL 导入</el-button>
+            <el-button type="add" v-show="$_has('PRODUCTADDLIST')" @click="handleExcel">EXCEL 导入</el-button>
           </div>
 
           <el-col :span="3">
@@ -20,15 +19,15 @@
           <div style="margin:0 15px">
             <el-button type="add" icon="el-icon-search" @click="seachinfo1">搜索</el-button>
             <el-button type="success" icon="el-icon-refresh-right" @click="resetting">重置</el-button>
+            <el-button type="primary" v-show="$_has('PRODUCTEXPORT')" @click="daochuExcel">导出EXCEL</el-button>
           </div>
         </el-row>
       </el-form>
     </div>
     <div class="bot">
       <el-table :data="tableData" stripe border>
-       
         <el-table-column
-        show-overflow-tooltip
+          show-overflow-tooltip
           v-for="(item, index) in columnlist"
           :key="index"
           :width="item.width"
@@ -37,21 +36,20 @@
           align="center"
         >
         </el-table-column>
-       
-        <el-table-column label="操作"  width="220">
+        <el-table-column label="操作" align="center" width="170">
           <template slot-scope="scope">
-            <el-button type="success" v-if="$_has('PRODUCTUPDATE')&&scope.row.state===1" plain @click="handleagin(scope.row)"
+            <el-button type="success" v-if="$_has('PRODUCTUPDATE')" plain @click="handleagin(scope.row)"
               >修改</el-button
             >
-            <el-button type="warning" v-if="$_has('PRODUCTDELETE')&&scope.row.state===1" plain @click="handleUntie(scope.row)"
+            <el-button type="warning" v-if="$_has('PRODUCTDELETE')" plain @click="handleUntie(scope.row)"
               >删除</el-button
             >
-             <el-button type="danger" v-if="scope.row.state===1" plain @click="handledelete(scope.row)"
+            <!-- <el-button type="danger" v-if="scope.row.state===1" plain @click="handledelete(scope.row)"
               >禁用</el-button>
-              <el-button type="danger" disabled v-if="scope.row.state===0" plain 
+              <el-button type="danger" disabled v-if="scope.row.state===0" plain
               >已禁用</el-button>
               <el-button type="info" v-if="scope.row.state===0&&scope.row.validCopy==0" plain @click="handlecopy(scope.row)"
-              >复制</el-button>
+              >复制</el-button> -->
           </template>
         </el-table-column>
       </el-table>
@@ -66,7 +64,7 @@
         </el-pagination>
       </div>
     </div>
-    <Modal :dialogFormVisible="dialogFormVisible" ref="productmodal" :tit="tit" @close="close" @iscopy="iscopy"/>
+    <Modal :dialogFormVisible="dialogFormVisible" ref="productmodal" :tit="tit" @close="close" @iscopy="iscopy" />
     <excelModal
       ref="excelModal"
       :title="excel.title"
@@ -78,8 +76,10 @@
 </template>
 
 <script>
-import { productPage, productDelete,productupdateStateById,productPost,productInfo } from 'api/product';
+import { productPage, productDelete, productupdateStateById, productPost, productInfo } from 'api/product';
 import Modal from './modal';
+import { export2Excel } from '@/utils/util.js';
+import moment from 'moment';
 export default {
   name: 'product',
   components: {
@@ -88,7 +88,7 @@ export default {
   },
   data() {
     return {
-      loading:false,
+      loading: false,
       seachinfo: {},
       dialogFormVisible: false,
       tit: '新增产品',
@@ -106,18 +106,18 @@ export default {
         { prop: 'productCode', label: '产品编码' },
         { prop: 'model', label: '规格型号' },
         { prop: 'productType', label: '产品类型' },
-        { prop: 'unit', label: '基本单位' },
+        { prop: 'unit', label: '基本单位', width: '70' },
         { prop: 'partCodes', label: '关联零件&标准件' },
-        { prop: 'workprocessCodes', label: '关联工序' },
+        { prop: 'workprocessNames', label: '关联工序' },
         { prop: 'deptName', label: '所属部门' },
         { prop: 'createTime', label: '创建时间' }
       ],
-     
       excel: {
         title: '导入零件',
         dialogExcelVisible: false
       },
-      copyid:'',
+      copyid: '',
+      tableData1: []
     };
   },
   created() {
@@ -126,13 +126,32 @@ export default {
   mounted() {},
   computed: {},
   methods: {
-    
+    daochuExcel: async function() {
+      let time = moment(new Date()).format('YYYYMMDD');
+      await this.allgetproductPage();
+      export2Excel(this.columnlist, this.tableData1, `产品管理-${time}`);
+      // this.$message.success('导出成功');
+    },
+    allgetproductPage: async function() {
+      let obj = { ...this.seachinfo, current: 1, size: 5000, type: 1 };
+      await productPage(obj).then(res => {
+        if (res.code === '0') {
+          res.data.records.map((item, index) => {
+            item.index = index + 1;
+            if (item.createTime) {
+              item.createTime = item.createTime.split(' ')[0];
+            }
+          });
+          this.tableData1 = res.data.records;
+        }
+      });
+    },
     // 数据列表
     getproductPage() {
-      this.loading = true
+      this.loading = true;
       let obj = { ...this.seachinfo, ...this.page };
       productPage(obj).then(res => {
-        this.loading = false
+        this.loading = false;
         if (res.code === '0') {
           res.data.records.map((item, index) => {
             item.index = index + 1;
@@ -160,7 +179,7 @@ export default {
     },
     //新增
     add() {
-      this.tit = '新增产品'
+      this.tit = '新增产品';
       this.dialogFormVisible = true;
     },
     close(num) {
@@ -175,30 +194,28 @@ export default {
     },
     // 修改
     handleagin(info) {
-     
       this.tit = '修改产品';
       this.$refs.productmodal.getproductInfo(info);
       this.dialogFormVisible = true;
     },
-    handlecopy(info){
-      this.copyid = info.id
-       this.$refs.productmodal.getproductInfo(info,true);
+    handlecopy(info) {
+      this.copyid = info.id;
+      this.$refs.productmodal.getproductInfo(info, true);
     },
-    iscopy(val){
-      debugger
-      delete val.createTime
-      delete val.state
-      val.id = this.copyid
-      val.isCopy = true
-       productPost(val).then(v=>{
-              if(v.code==='0'){
-                debugger
-              }
-            })
+    iscopy(val) {
+      delete val.createTime;
+      delete val.state;
+      val.id = this.copyid;
+      val.isCopy = true;
+      productPost(val).then(v => {
+        if (v.code === '0') {
+          this.$message.success(res.msg);
+        }
+      });
     },
     // 禁用
-    handledelete(info){
-       this.$confirm('确定要禁用吗？', '提示', {
+    handledelete(info) {
+      this.$confirm('确定要禁用吗？', '提示', {
         type: 'warning'
       })
         .then(() => {
@@ -210,7 +227,6 @@ export default {
           });
         })
         .catch(() => {});
-      
     },
     //删除
     handleUntie(info) {
@@ -249,7 +265,7 @@ export default {
 </style>
 <style lang="less">
 .product {
-   min-height:99% ;
+  min-height: 99%;
   .top {
     height: 50px;
     margin-top: 10px;

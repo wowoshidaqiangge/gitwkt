@@ -69,7 +69,6 @@ export default {
               persons = persons.concat(xlsx.utils.sheet_to_json(workbook.Sheets[sheet])); // break; // 如果只取第一张表，就取消注释这行
             }
           }
-          console.log(persons);
           that.deliver(persons);
         };
         // 以二进制方式打开文件

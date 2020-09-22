@@ -227,7 +227,14 @@ export default {
                 {label:'只',id:'只'},
                 {label:'件',id:'件'},
                 {label:'台',id:'台'},
-                {label:'条',id:'条'}
+                {label:'条',id:'条'},
+                {label:'支',id:'支'},
+                {label:'套',id:'套'},
+                {label:'斤',id:'斤'},
+                {label:'米',id:'米'},
+                {label:'片',id:'片'},
+                {label:'面',id:'面'},
+                {label:'打',id:'打'},
             ],
 
             form1:{},
@@ -320,6 +327,7 @@ export default {
         // 产品详情
         getproductInfo:async function (info,iscopy){
            await productInfo({id:info.id,type:1}).then(res=>{
+               debugger
                 if(res.code ==='0'){
                     this.getpartList({deptId:res.data.deptId})
                     this.getworkprocessList({deptId:res.data.deptId})
@@ -327,8 +335,6 @@ export default {
                     let arr1 = []
                     let arr2 = []
                     let arr3 = []
-                  
-                   
                     res.data.productType1 = res.data.productTypeId
                     res.data.type = 1
                     res.data.partList.map((item)=>{
@@ -341,14 +347,15 @@ export default {
                     })
                     
                      res.data.workprocessList.map((item)=>{
-                    
-                        arr2.push(item.workprocessCode)
-                        arr3.push(item.workprocessName)
-                        if(item.workprocessName==="完工"&&item.workprocessType=="5"){
-                             this.isover = true
+                        if(item){
+                            arr2.push(item.workprocessCode)
+                            arr3.push(item.workprocessName)
+                            if(item.workprocessName==="完工"&&item.workprocessType=="5"){
+                                this.isover = true
+                            }   
                         }
+                       
                     })
-                
                     this.checkedCities = arr2
                     this.citiesName = arr3
                     this.form = res.data

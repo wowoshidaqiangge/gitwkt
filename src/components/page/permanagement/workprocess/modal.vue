@@ -16,7 +16,7 @@
                 </el-col>
                 <el-col :span="11">
                     <el-form-item label="工序编码" :label-width="formLabelWidth" prop='workprocessCode'>
-                            <el-input v-model="form.workprocessCode" ></el-input>
+                            <el-input v-model="form.workprocessCode" :disabled="tit==='修改工序'"></el-input>
                     </el-form-item>
                 </el-col>
                 <el-col :span="11">

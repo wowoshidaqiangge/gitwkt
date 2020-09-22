@@ -147,7 +147,7 @@
                   <el-col :span="24">
                      <el-col :span="5">
                         <el-form-item label="合格" :label-width="formLabelWidth1" prop="qualified">
-                                <el-input v-model="form.qualified" @blur="blurinput" @keyup.native="changeAmount('qualified')"></el-input>
+                                <el-input v-model="form.qualified" @keyup.native="changeAmount('qualified')"></el-input>
                         </el-form-item>
                     </el-col>
                     <el-col :span="5" :offset='1'>
@@ -162,7 +162,7 @@
                     </el-col>
                     <el-col :span="5" :offset='1'>
                         <el-form-item label="补" :label-width="formLabelWidth1" prop="supplement">
-                                <el-input v-model="form.supplement" placeholder="负数表示扣除" @keyup.native="changeAmount('supplement')"></el-input>
+                                <el-input v-model="form.supplement" placeholder="负数表示扣除" @keyup.native="changeAmount1('supplement')"></el-input>
                         </el-form-item>
                     </el-col>
                 </el-col>
@@ -282,6 +282,7 @@ export default {
             ossParamskey:[],
             suc:0,
             err:0,
+            tableData1:[]
         }
     },
     created(){
@@ -297,10 +298,24 @@ export default {
     methods: {
       
        changeAmount(info){
-           
+            let a = this.form[info].replace(/[^\d.]/g,'').split('.')
+            if(a.length>2){
+              this.$message.error('数据格式有误')
+             
+            }
             this.form[info] = this.form[info].replace(/[^\d.]/g,'')
   
         },
+         changeAmount1(info){
+            let a = this.form[info].replace(/[^\d.-]/g,'').split('.')
+            if(a.length>2){
+              this.$message.error('数据格式有误')
+             
+            }
+            this.form[info] = this.form[info].replace(/[^\d.-]/g,'')
+  
+        },
+        
        down(info){
           getBlob(info.testbillUrl).then(blob => {
             saveAs(blob, info.testbillName);
@@ -342,9 +357,8 @@ export default {
              }
              let att = []
              this.removenull(this.codeList.split(/[(\r\n)\r\n]+/)).map((item=>{
-              
                  if(item){
-                   let a = this.tableData.filter(v=>v.itemCode===item)
+                   let a = this.tableData1.filter(v=>v.itemCode===item)
                     if(a.length<1){
                       att.push(item)
                     }
@@ -361,6 +375,7 @@ export default {
                   this.$message.success(res.msg)
                   this.inittable()
                   this.getproduceWorkprocessQualityPage(this.wayinfo)
+                  this.allgetproduceWorkprocessQualityPage(this.wayinfo)
                }
             })
         },
@@ -371,30 +386,25 @@ export default {
             delete tail.remark
             let obj = {...tail,...pro}
             this.getproduceWorkprocessQualityPage(info)
+            this.allgetproduceWorkprocessQualityPage(info)
             obj.type=3
             obj.checkType = 3
             obj.qualityState='1'
-            // delete obj.remark
+            delete obj.createTime
+            if(obj.finishTime){
+              delete obj.finishTime
+            }
             this.form = obj
         },
         // 质检结果
-       getproduceWorkprocessQualityPage(info){
-           this.wayinfo = info
-           let obj = {produceTaskPlanId:info.produceTaskPlanId,workprocessId:info.workprocessId,type:2,...this.page }
-           produceWorkprocessQualityPage(obj).then(res=>{
+        allgetproduceWorkprocessQualityPage(info){
+          let obj = {produceTaskPlanId:info.produceTaskPlanId,workprocessId:info.workprocessId,type:2,current:1,size:500,type:2 }
+          produceWorkprocessQualityPage(obj).then(res=>{
                if(res.code==='0'){
                    let suc = 0
                    let err = 0
                    res.data.records.map((item,index)=>{
-                       item.index= index+1
-                       item.workerUser = item.workerUser.split('"')[1]
-                       item.createTime = item.createTime.split(' ')[0]
-                       if(item.checkExamTime){
-                          item.checkExamTime = item.checkExamTime.split(' ')[0]
-                       }
-                       if(item.checkExamUser){
-                         item.checkExamUser = item.checkExamUser.split('"')[1]
-                       }
+                     
                        if(item.qualityState){
                          switch (item.qualityState) {
                             case '1':
@@ -409,6 +419,41 @@ export default {
                    })
                    this.suc = suc
                    this.err = err
+                   this.tableData1 = res.data.records
+               }
+           })
+        },
+       getproduceWorkprocessQualityPage(info){
+           this.wayinfo = info
+           let obj = {produceTaskPlanId:info.produceTaskPlanId,workprocessId:info.workprocessId,type:2,...this.page }
+           produceWorkprocessQualityPage(obj).then(res=>{
+               if(res.code==='0'){
+                  //  let suc = 0
+                  //  let err = 0
+                   res.data.records.map((item,index)=>{
+                       item.index= index+1
+                       item.workerUser = item.workerUser.split('"')[1]
+                       item.createTime = item.createTime.split(' ')[0]
+                       if(item.checkExamTime){
+                          item.checkExamTime = item.checkExamTime.split(' ')[0]
+                       }
+                       if(item.checkExamUser){
+                         item.checkExamUser = item.checkExamUser.split('"')[1]
+                       }
+                       if(item.qualityState){
+                         switch (item.qualityState) {
+                            case '1':
+                                item.qualityState = "合格";
+                                // suc++
+                                break;
+                            case '2':
+                                item.qualityState = "不合格";
+                                // err++
+                        } 
+                       }
+                   })
+                  //  this.suc = suc
+                  //  this.err = err
                     this.pagesize = parseInt(res.data.current)
                     this.totals = parseInt(res.data.total)
                    this.tableData = res.data.records
@@ -447,6 +492,13 @@ export default {
                     delete this.form[item]
                   }
                 })
+                // if(this.form.createTime){
+                //   delete this.form.createTime
+                // }
+                // // if(this.from.finishTime){
+                //   delete this.from.finishTime
+                // // }
+                
                 if (valid) {
                     produceTaskQuality(this.form).then(res=>{
                         if(res.code==='0'){

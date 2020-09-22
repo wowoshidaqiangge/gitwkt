@@ -25,6 +25,11 @@
         <el-form-item label="IC卡号" :label-width="formLabelWidth" class="formitem" prop="icCard">
           <el-input v-model="form.icCard" autocomplete="off"></el-input>
         </el-form-item>
+        <el-form-item label="工号" :label-width="formLabelWidth" class="formitem" prop="officeNo">
+          <el-input v-model="form.officeNo" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item :label-width="formLabelWidth" class="formitem">
+        </el-form-item>
         <el-form-item label="员工照片" :label-width="formLabelWidth" class="formitem">
           <el-upload class="avatar-uploader" :data="ossParams" :action="host" :show-file-list="false"
             :on-success="handleAvatarSuccess" :before-upload="beforeUpload" :limit="limit" :on-exceed="exceed"
@@ -97,7 +102,8 @@ export default {
         icCard: '',
         deptId: '',
         username: '',
-        password: ''
+        password: '',
+        officeNo:''
       },
       formLabelWidth: '80px',
       rules: {
@@ -113,7 +119,8 @@ export default {
           { pattern: /^[0-9]*$/, message: 'IC卡号格式有误' }
         ],
         roleId: [{ required: true, message: '请选择员工角色', trigger: 'blur' }],
-        deptId: [{ required: true, message: '请选择部门', trigger: 'blur' }]
+        deptId: [{ required: true, message: '请选择部门', trigger: 'blur' }],
+        officeNo: [{ required: true, message: '请填写工号', trigger: 'blur' }]
       },
       //树形选择器组件
       isClearable: false, // 可清空（可选）

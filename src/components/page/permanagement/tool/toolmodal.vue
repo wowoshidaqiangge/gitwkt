@@ -119,9 +119,9 @@ export default {
         deptId: '',
       }
     },
-    // getToolForm(toolForm) {
-    //   this.form = toolForm
-    // },
+    getToolForm(toolForm) {
+      this.form = toolForm
+    },
     getdept() {
       getProduceDeptList().then(res => {
         if (res.code === '0') {

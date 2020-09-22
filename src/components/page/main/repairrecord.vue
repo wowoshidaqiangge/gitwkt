@@ -7,7 +7,15 @@
           <div style="flex:1">
             <el-button type="add" icon="el-icon-circle-plus-outline" @click="recordAdd()">新增</el-button>
           </div>
-          <el-col :span="6">
+          <el-col :span="3" style="margin:0 20px">
+            <el-form-item label="" prop="toType">
+              <el-select v-if="roleId==1||roleId==0" v-model="toType" placeholder="选择设备类型" style="width:100%">
+                <el-option v-for="item in deviceList" :label="item.enumValue" :key='item.enumKey' :value="item.enumKey">
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
             <el-form-item label="" prop="chosedTime">
               <el-date-picker v-model="chosedTime" type="daterange" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
                 range-separator="至" start-placeholder="开始日期" @change="changedate" class="datetime"
@@ -64,6 +72,7 @@
 
 <script>
 import { repairrecordpage, mainrepairdel } from 'api/main';
+import { deviceTypeList } from 'api/index'
 import repairmodal from './repairmodal';
 import repairexamine from './repairexamine';
 
@@ -75,6 +84,7 @@ export default {
   },
   data() {
     return {
+      roleId: '',
       orderlist: [
         { name: '待检修', value: '0' },
         { name: '已完成', value: '1' }
@@ -86,6 +96,8 @@ export default {
       },
       chosedTime: [],
       value1: '',
+      toType: '',
+      deviceList: [], //设备类型列表
       tableData: [],
       page: {
         current: 1,
@@ -114,10 +126,24 @@ export default {
     };
   },
   computed: {},
+  mounted() {},
   created() {
+    this.roleId = sessionStorage.getItem('roleId')
+    if(this.roleId==1||this.roleId==0){
+      this.toType='1'
+    }
+    this.getdeviceTypeList()
     this.getrepairrecordpage();
   },
   methods: {
+    // 获取部门(设备类型)
+    getdeviceTypeList() {
+      deviceTypeList().then(res => {
+        if (res.code === '0') {
+          this.deviceList = res.data
+        }
+      })
+    },
     resetting() {
       this.seachinfo = { beginDate: '', endDate: '', state: '', }
       this.chosedTime = []
@@ -125,6 +151,7 @@ export default {
       this.getrepairrecordpage()
     },
     seachinfo1() {
+      this.seachinfo.toType = this.toType
       this.seachinfo.beginDate = this.chosedTime[0]
       this.seachinfo.endDate = this.chosedTime[1]
       this.page.current = 1

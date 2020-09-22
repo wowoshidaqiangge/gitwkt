@@ -4,6 +4,7 @@
       <el-col :span="8" class="top-left">
         <el-button v-show="$_has('GUIDEADD')" type="add" @click="handleAdd">新增</el-button>
         <el-button v-show="$_has('GUIDETADDLIST')" type="add" @click="handleExcel">EXCEL 导入</el-button>
+        <el-button type="add" v-show="$_has('GUIDEEXPORT')" @click="exportExcel">导出</el-button>
       </el-col>
       <el-col :span="6" :offset="6">
         <el-input
@@ -35,7 +36,7 @@
           align="center"
         >
         </el-table-column>
-        <el-table-column label="操作" align="center" width="240">
+        <el-table-column label="操作" align="center" width="170">
           <template slot-scope="scope">
             <el-button v-show="$_has('GUIDEUPDATE')" type="add" plain @click="handleEdit(scope.$index, scope.row)"
               >修改</el-button
@@ -78,7 +79,7 @@
 
 <script>
 import { getGuidePage, delGuide } from '@/api/permanagement/guide';
-
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'Guide',
   components: {
@@ -183,7 +184,6 @@ export default {
       this.$refs.guideModal.getCheckNames('');
       this.raw.dialogRawVisible = true;
     },
-
     // 修改用户的表单
     handleEdit(index, row) {
       this.raw.title = '修改';
@@ -260,6 +260,15 @@ export default {
     },
     handleExcelClose() {
       this.excel.dialogExcelVisible = false;
+    },
+    async exportExcel() {
+      const obj = { current: 1, size: 10000 };
+      let tableData = [];
+      await getGuidePage(obj).then(res => {
+        tableData = res.data.records;
+      });
+      export2Excel(this.columnlist, tableData, `威肯特-导轨`);
+      this.$message.success('导出成功');
     }
   }
 };

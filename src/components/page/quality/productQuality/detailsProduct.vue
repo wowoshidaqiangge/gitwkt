@@ -11,7 +11,7 @@
             <div class="infolist">
                 <div class="info" v-for="(item,index) in prolist" :key="index">
                     <p><span>{{item.name}}：</span></p>
-                    <p>{{item.value}}</p>
+                    <p :title="item.value" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{item.value}}</p>
                 </div>
                
             </div>
@@ -29,13 +29,13 @@
                                width="50px"
                         >  
                      </el-table-column>    
-                     <el-table-column
+                     <!-- <el-table-column
                                     prop="taskNumber"
                                     label="生产工单号"
                                     align="center"
                                
                             >  
-                        </el-table-column>         
+                        </el-table-column>          -->
                     <el-table-column label="加工内容" align="center">
                         <el-table-column
                                 prop="workKind"
@@ -208,7 +208,7 @@ export default {
           let pro = JSON.parse(JSON.stringify(info))
           this.wayinfo = pro
           let arr = [
-              {name:"产品任务单",value:pro.taskNumber},
+              {name:"装配工单号",value:pro.taskNumber},
               {name:"物料编码",value:pro.itemCode},
               {name:"物料名称",value:pro.itemName},
               {name:"规格型号",value:pro.model},
@@ -222,7 +222,7 @@ export default {
               {name:"备注",value:pro.remark},
           ]
           this.prolist = arr
-          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId}).then(res=>{
+          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId,state:pro.state}).then(res=>{
               if(res.code==='0'){
                    handle(res.data.records)
                    this.pagesize = parseInt(res.data.current)

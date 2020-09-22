@@ -19,8 +19,7 @@
         </el-form-item>
         <el-form-item label="基本单位" prop="unit">
           <el-select v-model="ruleForm.unit" placeholder="请选择单位">
-            <el-option v-for="(item, index) in unitOptions" :key="index" :label="item.label" :value="item.label">
-            </el-option>
+            <el-option v-for="(item, index) in unitOptions" :key="index" :label="item" :value="item"> </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="物料类别" prop="productTypeId">
@@ -79,12 +78,7 @@ export default {
         deptId: '',
         itemType: 3
       },
-      unitOptions: [
-        { label: '个', value: '0' },
-        { label: '件', value: '1' },
-        { label: '只', value: '2' },
-        { label: '条', value: '3' }
-      ],
+      unitOptions: ['个', '只', '件', '条', '支', '面', '台'],
       deptOptions: [],
       rawList: [],
       processList: [],

@@ -5,6 +5,7 @@
               <el-row type='flex' justify="end">
                 <div style="flex:1">
                     <el-button type="add" v-if="$_has('WORKPRICEADD')" icon='el-icon-circle-plus-outline' @click="add">新增</el-button>
+                    <el-button type="add"  @click="addexcel">EXCEL导入</el-button>
                 </div>
                 <el-col :span="2" style="margin:0 20px" v-if="roleId<3">
                     <el-form-item label="" prop="deptId">
@@ -23,6 +24,7 @@
                 <div style="margin:0 15px">
                     <el-button type="add" icon="el-icon-search" @click="seachinfo1">搜索</el-button>
                     <el-button type="success" icon="el-icon-refresh-right" @click="resetting">重置</el-button>
+                    <el-button type="primary" @click="handleExcel">EXCEL 导出</el-button>
                 </div>
               </el-row>
             </el-form>
@@ -70,7 +72,6 @@
                                     plain
                                     @click="handleagin(scope.row)"
                                 >修改</el-button>
-                              
                                 <el-button
                                     type="warning"
                                     v-if="$_has('WORKPRICEDELETE')"
@@ -91,6 +92,7 @@
             </div>
       </div>
     <Modal :dialogFormVisible="dialogFormVisible" ref="workpricemodal" :tit="tit" @close='close'/>
+    <Workexcel :dialogExcelVisible="dialogExcelVisible" :extitle="extitle" @exclose="exclose"/>
   </div>
 </template>
 
@@ -100,10 +102,13 @@ import {
     workpricedelete
     } from 'api/product'
 import Modal from './modal'
+import moment from 'moment'
+import { export2Excel2,} from '@/utils/util.js';
+import Workexcel from './workpriceexcel.vue'
 export default {
     name: 'workprice',
     components:{
-        Modal
+        Modal,Workexcel
     },
     data() {
         return {
@@ -136,6 +141,9 @@ export default {
                 { value: '7', label: '生产一部' },
                 { value: '8', label: '生产二部' },
             ],
+            extitle:'导出EXCEL',
+            dialogExcelVisible:false,
+            tableData1:[]
         }
     },
     created(){
@@ -145,6 +153,40 @@ export default {
         
     },
     methods: {
+        addexcel(){
+            this.dialogExcelVisible= true
+        },
+        exclose(num){
+            this.dialogExcelVisible = false
+            if(num==='0'){
+                this.getworkpricePage()
+            }
+        },
+        handleExcel:async function(){
+            await this.allgetworkpricePage()
+            const multiHeader = [['序号',"物料名称","物料编码","规格型号","工序名称","工序编码","所属部门","计时单价","计件单价","",""]]
+            const header = ["","","","","","","","","合格品P","让步工H","降级工C"]
+            const filterVal =['index','itemName','itemCode','model','workprocessName','workprocessCode','deptName','timePrice','qualifiedPrice','concessionPrice','demotionPrice',]
+            const data = this.tableData1
+            const merges = ['A1:A2','B1:B2','C1:C2','D1:D2','E1:E2','F1:F2','G1:G2','H1:H2','I1:K1']
+            let time = moment(new Date()).format("YYYYMMDD")
+            export2Excel2(header,data,`工价管理列表${time}`,filterVal,multiHeader,merges)
+        },
+        allgetworkpricePage:async function(){
+            let obj = {...this.seachinfo,current:1,size:10000}
+            await workpricePage(obj).then(res=>{
+                if(res.code==='0'){
+                    res.data.records.map((item,index)=>{
+                     item.index= index+1
+                     if(item.createTime){
+                         item.createTime = item.createTime.split(' ')[0]
+                     }
+                 })
+                this.tableData1 = res.data.records
+             
+                }
+            })
+        },  
         // 数据列表
         getworkpricePage(){
             let obj = {...this.seachinfo,...this.page}

@@ -41,6 +41,7 @@
       <div class="top__btn">
         <el-button type="add" @click="handleQuery">查询</el-button>
         <el-button type="info" @click="handleReset">重置</el-button>
+        <el-button type="add" v-show="$_has('CURRENTSALARYEXPORT')" @click="exportExcel">导出</el-button>
       </div>
     </el-row>
     <div class="content__tip">
@@ -70,7 +71,13 @@
         </el-table-column>
         <el-table-column label="操作" align="center" width="80">
           <template slot-scope="scope">
-            <el-button type="primary" plain @click="handleEdit(scope.$index, scope.row, param.type)">编辑</el-button>
+            <el-button
+              type="primary"
+              plain
+              v-if="$_has('CURRENTSALARYOPERATION')"
+              @click="handleEdit(scope.$index, scope.row, param.type)"
+              >编辑</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -99,7 +106,9 @@
 <script>
 import { getProduceDeptList } from '@/api/main'; // 公共api
 import { getSalaryPage } from '@/api/salary';
+import { export2Excel } from '@/utils/util.js';
 
+import moment from 'moment';
 export default {
   name: 'salary',
   components: {
@@ -107,17 +116,18 @@ export default {
   },
   data() {
     return {
+      deptId: '',
       param: {
         current: 1,
         size: 10,
-        deptId: '',
+        deptId: '7',
         type: '',
         name: '',
         officeNo: '',
         startTime: '',
         endTime: ''
       },
-      deptValue: [],
+      deptValue: ['7'],
       dateValue: [],
       // deptList: [],
       deptOptions: [
@@ -126,8 +136,19 @@ export default {
           label: '生产二部',
           value: '8',
           children: [
-            { label: '线轨', value: 1 },
-            { label: '滑块', value: '' }
+            { label: '线轨', value: '20' },
+            { label: '滑块', value: '19' }
+          ]
+        }
+      ],
+      deptOptions1: [{ label: '生产一部', value: '7' }],
+      deptOptions2: [
+        {
+          label: '生产二部',
+          value: '8',
+          children: [
+            { label: '线轨', value: '20' },
+            { label: '滑块', value: '19' }
           ]
         }
       ],
@@ -166,10 +187,11 @@ export default {
         { prop: 'workprocessCode', label: '工序编号' },
         { prop: 'workprocessName', label: '工序' },
         { prop: 'produceCount', label: '实际完成数量' },
+        { prop: 'qualified', label: '合格数量', width: 50 },
+        { prop: 'unQualified', label: '不合格数量', width: 60 },
         { prop: 'pNums', label: 'P级数量', width: 50 },
         { prop: 'hNums', label: 'H级数量', width: 50 },
         { prop: 'cNums', label: 'C级数量', width: 50 },
-        { prop: 'unQualified', label: '不合格数量', width: 60 },
         { prop: 'scrapNums', label: '报废数量', width: 50 },
         { prop: 'supplement', label: '补', width: 50 },
         { prop: 'remark', label: '不合格原因' },
@@ -193,6 +215,7 @@ export default {
   },
   computed: {},
   created() {
+    this.deptId = sessionStorage.getItem('deptId');
     // this.getDeptList();
     this.init();
     console.log(this.columnlist);
@@ -202,37 +225,73 @@ export default {
       this.param = {
         current: 1,
         size: 10,
-        deptId: '',
-        type: '',
         name: '',
         officeNo: '',
-        startTime: '',
-        endTime: ''
+        startTime: moment()
+          .startOf('month')
+          .format('YYYY-MM-DD'),
+        endTime: moment(new Date()).format('YYYY-MM-DD')
       };
-      this.dateValue = [];
-      this.deptValue = [];
-      this.columnlist = this.columnlist1;
-      this.getTableData();
+      this.dateValue = [this.param.startTime, this.param.endTime];
+
+      if (this.deptId == 7) {
+        this.deptOptions = this.deptOptions1;
+        this.param.deptId = '7';
+        this.deptValue = ['7'];
+        this.param.type = '';
+        this.columnlist = this.columnlist1;
+      } else if (this.deptId == 8) {
+        this.deptOptions = this.deptOptions2;
+        this.param.deptId = '20';
+        this.deptValue = ['8', '20'];
+        this.param.type = 1;
+        this.columnlist = this.columnlist2;
+      } else if (this.deptId == 19 || this.deptId == 20) {
+        this.deptOptions = this.deptOptions2;
+        this.param.deptId = this.deptId;
+        this.deptValue = ['8', this.deptId];
+        this.param.type = '';
+        this.columnlist = this.columnlist2;
+      } else {
+        this.deptOptions = this.deptOptions;
+        this.param.deptId = '7';
+        this.deptValue = ['7'];
+        this.param.type = '';
+        this.columnlist = this.columnlist1;
+      }
+      this.$forceUpdate();
+      this.tableData.length = 0;
+      this.handleQuery();
     },
+
     // getDeptList() {
     //   getProduceDeptList().then(res => {
     //     res = res.data;
     //     this.deptList = res;
     //   });
     // },
+    handleTimeChange(val) {
+      console.log('时间', val);
+      if (val) {
+        this.param.startTime = val[0];
+        this.param.endTime = val[1];
+      } else {
+        this.param.startTime = '';
+        this.param.endTime = '';
+      }
+    },
+
     handleDeptChange(val) {
       console.log(val);
-      this.param.deptId = val[0];
-      this.param.current = 1;
-
-      if (val[1] && val[1] === 1) {
-        this.param.type = val[1];
+      this.param.deptId = val[val.length - 1];
+      if (val[1] && val[1] == 20) {
+        this.param.type = 1;
         this.columnlist = this.columnlist2;
       } else {
         this.param.type = '';
         this.columnlist = this.columnlist1;
       }
-      this.getTableData();
+      this.handleQuery();
     },
     // 获取表格数据
     getTableData() {
@@ -247,6 +306,26 @@ export default {
         .then(res => {
           if (res.code == 0) {
             res = res.data;
+            const accountTypeNames = ['-', '计件', '计时', '计件、计时组合'];
+            const stateMsgs = ['未核对', '已核对'];
+            for (let item of res.records) {
+              if (item.accountType) {
+                item.accountType = parseInt(item.accountType);
+                item.accountTypeName = accountTypeNames[item.accountType];
+              }
+              item.stateMsg = stateMsgs[parseInt(item.state)];
+              item.state = item.state ? item.state.toString() : '0';
+              item.firstCheckSquad = item.firstCheckSquad ? item.firstCheckSquad.toString() : '1';
+              item.assignUser = item.assignUser ? item.assignUser.split('"')[1] : '';
+              item.assignTime = item.assignTime ? item.assignTime.split(' ')[0] : '';
+              item.firstCheckSquadUser = item.firstCheckSquadUser ? item.firstCheckSquadUser.split('"')[1] : '';
+              item.firstCheckExamUser = item.firstCheckExamUser ? item.firstCheckExamUser.split('"')[1] : '';
+              item.secondCheckExamUser = item.secondCheckExamUser ? item.secondCheckExamUser.split('"')[1] : '';
+              item.finishCheckExamUser = item.finishCheckExamUser ? item.finishCheckExamUser.split('"')[1] : '';
+              item.finishTime = item.finishTime ? item.finishTime.split(' ')[0] : '';
+            }
+            this.tableData = res.records;
+            console.table(this.tableData);
             res.total = parseInt(res.total);
             res.pages = parseInt(res.pages);
             res.current = parseInt(res.current);
@@ -254,47 +333,21 @@ export default {
             const { total, pages, current, size } = res;
             this.page = { total, pages, current, size };
             this.salarySum = res.salarySum;
-            let accountTypeNames = ['-', '计件', '计时', '计件、计时组合'];
-            for (let item of res.records) {
-              if (item.accountType) {
-                item.accountType = parseInt(item.accountType);
-                item.accountTypeName = accountTypeNames[item.accountType];
-              }
-              item.state = item.state ? item.state.toString() : '0';
-              item.firstcheckSquad = item.firstcheckSquad ? item.firstcheckSquad.toString() : '1';
-              item.assignUser = item.assignUser ? item.assignUser.split('"')[1] : '';
-              item.assignTime = item.assignTime ? item.assignTime.split(' ')[0] : '';
-              item.firstCheckSquadUser = item.firstCheckSquadUser.split('"')[1];
-              item.firstCheckExamUser = item.firstCheckExamUser.split('"')[1];
-              item.secondCheckExamUser = item.secondCheckExamUser.split('"')[1];
-              item.finishCheckExamUser = item.finishCheckExamUser.split('"')[1];
-              item.finishTime = item.finishTime ? item.finishTime.split(' ')[0] : '';
-            }
-            this.tableData = res.records;
             this.loading = false;
-            console.log(this.tableData);
           } else {
             this.loading = false;
           }
         })
         .catch(error => {
           this.loading = false;
+          debugger;
           this.$message.error('后台接口错误');
         });
-    },
-    handleTimeChange(val) {
-      console.log('时间', val);
-      if (val) {
-        this.param.startTime = val[0];
-        this.param.endTime = val[1];
-      } else {
-        this.param.startTime = '';
-        this.param.endTime = '';
-      }
     },
 
     // 条件查询
     handleQuery() {
+      this.param.current = 1;
       this.getTableData();
     },
     // 分页导航
@@ -327,10 +380,55 @@ export default {
       this.$refs.editModal.getDetailData(row, type);
     },
     handleUpdateData() {
-      this.getTableData();
+      this.handleQuery();
     },
     handleClose() {
       this.modal.dialogVisible = false;
+    },
+    // Excel
+    async exportExcel() {
+      const { deptId, type, name, officeNo, startTime, endTime } = this.param;
+      const obj = { current: 1, size: 10000, deptId, type, name, officeNo, startTime, endTime };
+      let columnlist = JSON.parse(JSON.stringify(this.columnlist));
+      columnlist.push({ prop: 'stateMsg', label: '状态' });
+      let tableData = [];
+      await getSalaryPage(obj).then(res => {
+        if (res.code == 0) {
+          res = res.data;
+          const accountTypeNames = ['-', '计件', '计时', '计件、计时组合'];
+          const stateMsgs = ['未核对', '已核对'];
+          for (let item of res.records) {
+            if (item.accountType) {
+              item.accountType = parseInt(item.accountType);
+              item.accountTypeName = accountTypeNames[item.accountType];
+            }
+            item.stateMsg = stateMsgs[parseInt(item.state)];
+            item.state = item.state ? item.state.toString() : '0';
+            item.firstCheckSquad = item.firstCheckSquad ? item.firstCheckSquad.toString() : '1';
+            item.assignUser = item.assignUser ? item.assignUser.split('"')[1] : '';
+            item.assignTime = item.assignTime ? item.assignTime.split(' ')[0] : '';
+            item.firstCheckSquadUser = item.firstCheckSquadUser ? item.firstCheckSquadUser.split('"')[1] : '';
+            item.firstCheckExamUser = item.firstCheckExamUser ? item.firstCheckExamUser.split('"')[1] : '';
+            item.secondCheckExamUser = item.secondCheckExamUser ? item.secondCheckExamUser.split('"')[1] : '';
+            item.finishCheckExamUser = item.finishCheckExamUser ? item.finishCheckExamUser.split('"')[1] : '';
+            item.finishTime = item.finishTime ? item.finishTime.split(' ')[0] : '';
+          }
+          tableData = res.records;
+        }
+      });
+      //TODO: 导出的部门后缀
+      let suffix = '';
+      if (this.param.deptId == 7) {
+        suffix = '生产一部';
+      } else if (this.param.deptId == 19) {
+        suffix = '生产二部-滑块';
+      } else if (this.param.deptId == 20) {
+        suffix = '生产二部-线轨';
+      } else {
+        suffix = '';
+      }
+      export2Excel(columnlist, tableData, `当前工资-${suffix}`);
+      this.$message.success('导出成功');
     }
   }
 };
@@ -365,7 +463,7 @@ export default {
       width: 60px;
     }
     .el-button {
-      margin-right: 1rem;
+      margin-right: 0.5rem;
     }
   }
   .top__btn {

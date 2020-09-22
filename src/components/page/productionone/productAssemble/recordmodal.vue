@@ -94,7 +94,7 @@ export default {
   },
   methods: {
     getpageByProduceTaskPlanId(m, produceTask) {
-      var obj = { produceTaskPlanId: m.id, workprocessId: m.workprocessId }
+      var obj = { produceTaskPlanId: m.produceTaskPlanId, workprocessId: m.workprocessId, userId: m.assignId }
       pageByProduceTaskPlanId(obj).then(res => {
         if (res.code === '0') {
           res.data.map((item, index) => {

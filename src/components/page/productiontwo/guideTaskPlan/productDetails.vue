@@ -3,46 +3,32 @@
     <detailsInfo :infolist="infolist" :title="title" :infotitle="infotitle" @goback="goback">
       <div slot="content" style="padding:0 20px">
         <el-table :data="tableData" stripe border>
-          <el-table-column prop="index" label="编号" align="center"> </el-table-column>
+          <el-table-column prop="index" label="编号" align="center" width="60px"> </el-table-column>
           <el-table-column label="加工内容" align="center">
             <el-table-column prop="workKind" label="工种" align="center"> </el-table-column>
             <el-table-column prop="workprocessName" label="工序" align="center"> </el-table-column>
           </el-table-column>
           <el-table-column
-            v-for="item in columnlist.slice(0, 5)"
+            v-for="item in columnlist"
             :key="item.index"
             :prop="item.prop"
             :label="item.label"
-            align="center"
-          >
-          </el-table-column>
-          <el-table-column prop="accountType" label="结算方式" align="center">
-            <template slot-scope="scope">
-              <span v-if="scope.row.accountType == 1">计件</span>
-              <span v-if="scope.row.accountType == 2">计时</span>
-              <span v-if="scope.row.accountType == 3">计件和计时</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            v-for="item in columnlist.slice(6, 10)"
-            :key="item.index"
-            :prop="item.prop"
-            :label="item.label"
+            :width="item.width"
             align="center"
           >
           </el-table-column>
           <el-table-column label="状态" align="center">
             <template slot-scope="scope">
               <div slot="reference" class="name-wrapper">
-                <span v-if="scope.row.reportState == 1" style="font-weight:600;color:blue">未派单</span>
-                <span v-if="scope.row.reportState == 2" style="font-weight:600;color:orange">未领单</span>
+                <span v-if="scope.row.reportState == 1" style="font-weight:600;color:#E6A23C">未派单</span>
+                <span v-if="scope.row.reportState == 2" style="font-weight:600;color:#409EFF">未领单</span>
                 <span
                   v-if="scope.row.reportState == 3 || scope.row.reportState == 4"
-                  style="font-weight:600;color:green"
+                  style="font-weight:600;color:#67C23A"
                   >生产中</span
                 >
-                <span v-if="scope.row.reportState == 5" style="font-weight:600;color:gray">已完工</span>
-                <span v-if="scope.row.reportState == 6" style="font-weight:600;color:red">已锁定</span>
+                <span v-if="scope.row.reportState == 5" style="font-weight:600;color:#909399">已完工</span>
+                <span v-if="scope.row.reportState == 6" style="font-weight:600;color:#F56C6C">已锁定</span>
               </div>
             </template>
           </el-table-column>
@@ -53,8 +39,9 @@
                   type="add"
                   plain
                   v-if="
-                    scope.row.reportState == 1 &&
-                      scope.row.splitFlag !== 1 &&
+                    $_has('GUIDETASKPLANPLAN') &&
+                      scope.row.reportState == 1 &&
+                      scope.row.taskPlanType != 4 &&
                       scope.row.workprocessType != 3 &&
                       scope.row.workprocessName !== '完工'
                   "
@@ -66,22 +53,26 @@
                   type="add"
                   plain
                   v-if="
-                    scope.row.reportState == 1 &&
-                      scope.row.splitFlag === 1 &&
+                    $_has('GUIDETASKPLANPLAN') &&
+                      scope.row.reportState == 1 &&
+                      scope.row.taskPlanType == 4 &&
                       scope.row.workprocessType != 3 &&
                       scope.row.workprocessName !== '完工'
                   "
                   class="red"
                   style="background-color: #999 !important; border-color: #999 !important;"
                   @click="handlesplit(scope.$index, scope.row, parentRow)"
-                  :disabled="scope.row.splitFlag === 1"
+                  disabled
                   >工单分解</el-button
                 >
                 <el-button
                   type="add"
                   plain
                   v-if="
-                    scope.row.reportState == 1 && scope.row.workprocessType != 3 && scope.row.workprocessName !== '完工'
+                    $_has('GUIDETASKPLANASSIGN') &&
+                      scope.row.reportState == 1 &&
+                      scope.row.workprocessType != 3 &&
+                      scope.row.workprocessName !== '完工'
                   "
                   class="red"
                   @click="handledistribute(scope.$index, scope.row, parentRow, 2)"
@@ -90,7 +81,10 @@
                 <el-button
                   type="add"
                   v-if="
-                    scope.row.reportState == 2 && scope.row.workprocessType != 3 && scope.row.workprocessName !== '完工'
+                    $_has('GUIDETASKPLANUPDATE') &&
+                      scope.row.reportState == 2 &&
+                      scope.row.workprocessType != 3 &&
+                      scope.row.workprocessName !== '完工'
                   "
                   plain
                   @click="handleEdit(scope.$index, scope.row, parentRow, 1)"
@@ -101,22 +95,22 @@
                   type="add"
                   plain
                   v-if="
-                    ((scope.row.reportState == 3 || scope.row.reportState == 4) &&
+                    $_has('GUIDETASKPLANREPEAT') &&
+                      scope.row.reportState == 5 &&
                       scope.row.workprocessType != 3 &&
-                      scope.row.workprocessName !== '完工') ||
-                      (scope.row.reportState == 4 &&
-                        scope.row.workprocessType == 2 &&
-                        scope.row.workprocessName !== '完工')
+                      scope.row.workprocessName !== '完工' &&
+                      !scope.row.taskFinishFlag
                   "
                   class="red"
-                  @click="handleagin(scope.$index, scope.row, parentRow, 2)"
+                  @click="handleagin(scope.$index, scope.row, parentRow, 3)"
                   >重新派单</el-button
                 >
                 <el-button
                   type="add"
                   plain
                   v-if="
-                    (scope.row.reportState == 4 || scope.row.reportState == 5) &&
+                    $_has('GUIDETASKPLANREPORT') &&
+                      (scope.row.reportState == 3 || scope.row.reportState == 4 || scope.row.reportState == 5) &&
                       scope.row.workprocessType != 3 &&
                       scope.row.workprocessName !== '完工'
                   "
@@ -151,16 +145,40 @@ export default {
       infolist: [],
       title: '导轨生产工单-派单',
       infotitle: '基本信息：',
-      columnlist: [
+      columnlist: [],
+      columnlist1: [
         { label: '派工人员', prop: 'createUser' },
         { label: '派工日期', prop: 'createTime' },
         { label: '计划结束时间', prop: 'planEndTime' },
         { label: '设备编号', prop: 'deviceNumber' },
         { label: '工作人员', prop: 'assignUser' },
-        { label: '结算方式', prop: 'accountType' },
+        { label: '结算方式', prop: 'accountTypeName' },
         { label: '派件数量', prop: 'assignCount' },
-        { label: '合格P', prop: 'qualify' },
-        { label: '生产用时', prop: 'produceDuration' },
+        { prop: 'industrialWaste', label: '工废', width: 50 },
+        { prop: 'scrapWaste', label: '料废', width: 50 },
+        { prop: 'concessionWork', label: '让步工H', width: 50 },
+        { prop: 'relegationWork', label: '降级工C', width: 50 },
+        { prop: 'concessionMaterial', label: '让步料H', width: 50 },
+        { prop: 'relegationMaterial', label: '降级料C', width: 50 },
+        { prop: 'qualified', label: '合格P', width: 50 },
+        { label: '生产用时', prop: 'produceDuration', width: 50 },
+        { label: '完成时间', prop: 'finishTime' }
+      ],
+      columnlist2: [
+        { label: '派工人员', prop: 'createUser' },
+        { label: '派工日期', prop: 'createTime' },
+        { label: '计划结束时间', prop: 'planEndTime' },
+        { label: '设备编号', prop: 'deviceNumber' },
+        { label: '工作人员', prop: 'assignUser' },
+        { label: '结算方式', prop: 'accountTypeName' },
+        { label: '派件数量', prop: 'assignCount' },
+        { prop: 'produceCount', label: '实际完成数量', width: 60 },
+        { prop: 'qualified', label: '合格数量', width: 50 },
+        { prop: 'pNums', label: 'P级数量', width: 50 },
+        { prop: 'hNums', label: 'H级数量', width: 50 },
+        { prop: 'cNums', label: 'C级数量', width: 50 },
+        { prop: 'scrapNums', label: '报废数量', width: 50 },
+        { label: '生产用时', prop: 'produceDuration', width: 50 },
         { label: '完成时间', prop: 'finishTime' }
       ],
       tableData: [],
@@ -170,11 +188,8 @@ export default {
         dialogFormVisible1: false
       },
       parentRow: {},
-      param: {
-        type: 2,
-        produceTaskPlanId: ''
-      },
-      taskNumberArr: []
+      taskNumberArr: [],
+      param: {}
     };
   },
   created() {},
@@ -182,9 +197,14 @@ export default {
   watch: {},
   methods: {
     // API：数据获取
-    getBaseInfo(index, row) {
+    getBaseInfo(row) {
       this.parentRow = row;
       // 带过来的详情数据，表格数据另需接口请求
+      if (row.productTypeId == 3) {
+        this.columnlist = this.columnlist1;
+      } else {
+        this.columnlist = this.columnlist2;
+      }
       this.infolist = [
         { name: '生产工单', value: row.taskNumber },
         { name: '物料编码', value: row.itemCode },
@@ -197,36 +217,62 @@ export default {
         { name: '特殊要求', value: row.remark }
       ];
     },
-    getTableData(type, id) {
-      this.param.produceTaskPlanId = id;
-      this.param.type = type;
-      produceTaskPlanState(this.param).then(res => {
+    getTableData(obj) {
+      this.param = obj;
+      produceTaskPlanState({ ...this.param }).then(res => {
         if (res.code === '0') {
-          let index1 = 0;
+          // let index1 = 0;
+          const accountTypeNames = ['-', '计件', '计时', '计件、计时组合'];
+          const arr = [
+            'createUser',
+            'createTime',
+            'planEndTime',
+            'assignCount',
+            'deviceNumber',
+            'assignUser',
+            'accountType',
+            'qualify',
+            'produceDuration',
+            'finishTime',
+            'reportState',
+            'produceWorkprocessState',
+            'industrialWaste',
+            'scrapWaste',
+            'concessionWork',
+            'relegationWork',
+            'concessionMaterial',
+            'relegationMaterial',
+            'qualified',
+            'produceCount',
+            'pNums',
+            'hNums',
+            'cNums',
+            'scrapNums'
+          ];
           res.data.map((item, index) => {
-            if (item.createUser) {
-              item.createUser = item.createUser.split('"')[1];
-            }
-            const arr = [
-              'createUser',
-              'createTime',
-              'planEndTime',
-              'assignCount',
-              'deviceNumber',
-              'assignUser',
-              'accountType',
-              'qualify',
-              'produceDuration',
-              'finishTime',
-              'reportState',
-              'produceWorkprocessState'
-            ];
             if (item.workprocessType == 3 || (item.workprocessName === '完工' && item.workprocessType == 5)) {
-              // 质检类型的完工啥都不展示
+              // 外协类型的工序、质检类型的完工啥都不展示
               for (let i of arr) {
                 delete item[i];
               }
             }
+            item.index = index + 1;
+            if (res.data[res.data.length - 1].qualityState && res.data[res.data.length - 1].qualityState == 1) {
+              item.taskFinishFlag = true;
+            }
+            if (item.accountType) {
+              item.accountTypeName = accountTypeNames[parseInt(item.accountType)];
+            }
+            if (item.createUser) {
+              item.createUser = item.createUser.split('"')[1];
+            }
+            if (item.createTime) {
+              item.createTime = item.createTime.split(' ')[0];
+            }
+            if (item.finishTime) {
+              item.finishTime = item.finishTime.split(' ')[0];
+            }
+
             // 处理编号
             // item.taskNumber = item.taskNumber || ''; // 避免字段缺失报错
             // const tmpArr = item.taskNumber.split('#');
@@ -247,21 +293,22 @@ export default {
             //   indexa += 1;
             //   item.index = indexa;
             // }
-            if (item.taskNumber) {
-              if (item.taskNumber.indexOf('#') != -1) {
-                item.splitFlag = 1;
-                if (!index1 || item.taskNumber.substring(item.taskNumber.length - 1) == 1) {
-                  index1 = index1 + 1;
-                }
-                item.index = index1 + '-' + item.taskNumber.substring(item.taskNumber.length - 1);
-              } else {
-                item.index = index1 + 1;
-                index1 = index1 + 1;
-              }
-            } else {
-              item.index = index1 + 1;
-              index1 = index1 + 1;
-            }
+
+            // if (item.taskNumber) {
+            //   if (item.taskNumber.indexOf('#') != -1) {
+            //     item.splitFlag = 1; // 加一个工单被分解标志
+            //     if (!index1 || item.taskNumber.substring(item.taskNumber.length - 1) == 1) {
+            //       index1 = index1 + 1;
+            //     }
+            //     item.index = index1 + '-' + item.taskNumber.substring(item.taskNumber.length - 1);
+            //   } else {
+            //     item.index = index1 + 1;
+            //     index1 = index1 + 1;
+            //   }
+            // } else {
+            //   item.index = index1 + 1;
+            //   index1 = index1 + 1;
+            // }
           });
           this.tableData = res.data;
         }
@@ -271,7 +318,7 @@ export default {
     handleUntie(h, m, n) {
       console.log(m, n);
       this.modal.dialogFormVisible1 = true;
-      this.$refs.recordModal.getpageByProduceTaskPlanId(m.id, m.workprocessId);
+      this.$refs.recordModal.getpageByProduceTaskPlanId(m.produceTaskPlanId, m.workprocessId, m.assignUserId);
     },
     // 工单分解
     handlesplit(h, m, n) {
@@ -321,7 +368,7 @@ export default {
     close(num) {
       this.modal.dialogFormVisible = false;
       if (num === '0') {
-        this.getTableData(this.param.type, this.param.produceTaskPlanId);
+        this.getTableData({ ...this.param });
       }
     },
     close1() {

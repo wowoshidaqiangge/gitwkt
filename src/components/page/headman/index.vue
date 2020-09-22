@@ -5,7 +5,9 @@
     </div>
     <div v-show="tabIndex === 0" class="headman-content">
       <div class="content-head">
-        <el-button type="add" @click="gotoSalary">当月工资</el-button>
+        <el-button type="add" v-show="$_has('SALARYSELFONE') || $_has('SALARYSELFTWO')" @click="gotoSalary"
+          >当月工资</el-button
+        >
       </div>
       <div class="content-container">
         <div class="content-item" v-for="(item, index) in userList" :key="index">
@@ -23,12 +25,12 @@
             <span v-show="item.itemCode"> ({{ item.itemCode }})</span>
           </div>
           <div class="p0">
-            <p>物料图号:</p>
-            <p>{{ item.itemNumber }}</p>
+            <p>规格型号:</p>
+            <p>{{ item.itemModel }}</p>
           </div>
           <div class="p0">
-            <p>计划产量:</p>
-            <p>{{ item.planYield }}</p>
+            <p>派件数量:</p>
+            <p>{{ item.assignCount }}</p>
           </div>
           <div class="p0">
             <p>工序:</p>
@@ -42,7 +44,11 @@
             <el-progress type="circle" :percentage="item.produceProgress" :width="60"></el-progress>
           </div>
           <div class="subBtn">
-            <el-button type="info" size="mini" v-show="item.technology" @click="viewPdf(item.technology)"
+            <el-button
+              type="info"
+              size="mini"
+              v-show="item.technology"
+              @click="viewFile(item.technology, item.technologyName)"
               >查看工艺</el-button
             >
             <el-button type="add" size="mini" v-show="item.reportState === 2" @click="gotoClaim(item)">领单</el-button>
@@ -96,7 +102,7 @@
       </el-dialog>
     </div>
     <div v-show="tabIndex === 1" class="detail">
-      <div v-if="deptId == 7 || (deptId == 8 && curItem.productType != 4)" class="headman-detail">
+      <div v-if="curItem.productType != 4" class="headman-detail">
         <div class="detail-head">
           <el-button type="add" @click="gotoHome">返 回</el-button>
         </div>
@@ -108,7 +114,7 @@
                 <el-avatar
                   class="item__left--avatar"
                   shape="square"
-                  :size="200"
+                  :size="150"
                   fit="fill"
                   :src="userData.photoUrl"
                 ></el-avatar>
@@ -138,7 +144,9 @@
             </div>
           </div>
           <div class="detail__item detail__item2">
-            <h4 class="item__title">零件基本信息：</h4>
+            <h4 class="item__title" v-if="curItem.productType == 1">零件基本信息：</h4>
+            <h4 class="item__title" v-if="curItem.productType == 2">产品基本信息：</h4>
+            <h4 class="item__title" v-if="curItem.productType == 3">滑块基本信息：</h4>
             <div class="item__container">
               <span class="item__text"
                 >生产工单：<span class="text__value">{{ curItem.taskNumber }}</span></span
@@ -156,7 +164,7 @@
                 >规格型号：<span class="text__value">{{ curItem.itemModel }}</span></span
               >
               <span class="item__text"
-                >生产数量：<span class="text__value">{{ curItem.planYield }}</span></span
+                >计划产量：<span class="text__value">{{ curItem.planYield }}</span></span
               >
               <span class="item__text"
                 >计划开始时间：<span class="text__value">{{ curItem.planStartTime }}</span></span
@@ -167,7 +175,7 @@
               <span class="item__text"
                 >生产部门：<span class="text__value">{{ curItem.deptName }}</span></span
               >
-              <span class="item__text"
+              <span class="item__text" v-if="curItem.productType != 3 && curItem.productType != 4"
                 >发料人：<span class="text__value">{{ curItem.billName }}</span></span
               >
               <span class="item__text"
@@ -178,7 +186,7 @@
                   type="info"
                   size="mini"
                   v-show="curItem.technology && curItem.technology !== ''"
-                  @click="viewPdf(curItem.technology)"
+                  @click="viewFile(curItem.technology, curItem.technologyName)"
                   >查看工艺</el-button
                 ></span
               >
@@ -221,17 +229,19 @@
           </div>
           <div class="detail__item detail__item3">
             <h4 class="item__title">报工记录</h4>
-            <el-table :data="tableData" border height="300">
-              <el-table-column
-                v-for="item in columnList"
-                :width="item.width"
-                :key="item.index"
-                :prop="item.prop"
-                :label="item.label"
-                align="center"
-              >
-              </el-table-column>
-            </el-table>
+            <div class="table-box">
+              <el-table :data="tableData" border height="300">
+                <el-table-column
+                  v-for="item in columnList"
+                  :width="item.width"
+                  :key="item.index"
+                  :prop="item.prop"
+                  :label="item.label"
+                  align="center"
+                >
+                </el-table-column>
+              </el-table>
+            </div>
             <div class="btn--group">
               <el-button type="add" class="btn-large__single" @click="gotoBook(curItem)">报工</el-button>
             </div>
@@ -266,27 +276,34 @@
               装配测试信息录入：
               <span class="btn-fullscreen" @click="handleFullScreen"><i class="el-icon-rank"></i></span>
             </h4>
-            <el-table :data="tableData4" border height="300">
-              <el-table-column label="序号" width="60" align="center">
-                <template slot-scope="scope"
-                  ><span>{{ scope.$index + 1 }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column
-                v-for="(item, index) in columnList4"
-                :width="item.width"
-                :key="index"
-                :prop="item.prop"
-                :label="item.label"
-                align="center"
-              >
-              </el-table-column>
-              <el-table-column label="附件" align="center" width="80">
-                <template slot-scope="scope">
-                  <el-button type="add" v-show="scope.row.testbillUrl" @click="viewExcel(scope.row)">查看</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="table-box">
+              <el-table :data="tableData4" border height="300" :default-sort="{ prop: 'partCode', order: 'ascending' }">
+                <el-table-column label="序号" width="60" align="center">
+                  <template slot-scope="scope"
+                    ><span>{{ scope.$index + 1 }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  v-for="(item, index) in columnList4"
+                  :width="item.width"
+                  :key="index"
+                  :prop="item.prop"
+                  :label="item.label"
+                  align="center"
+                >
+                </el-table-column>
+                <el-table-column label="附件" align="center" width="80">
+                  <template slot-scope="scope">
+                    <el-button
+                      type="add"
+                      v-show="scope.row.testbillUrl"
+                      @click="viewFile(scope.row.testbillUrl, scope.row.testbillName)"
+                      >查看</el-button
+                    >
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
             <div class="btn--group">
               <el-button type="add" @click="handleAssembleImport(0)">单个录入</el-button>
               <el-button type="add" class="btn-large__two" @click="handleAssembleImport(1)">批量录入</el-button>
@@ -331,7 +348,7 @@
                 </el-col>
                 <el-col :span="24" v-else>
                   <span style="color: red;"
-                    >注意：批量录入的文件名格式为 “产品编码-泵体编码”，且一次最多上传20个。</span
+                    >注意：批量录入的文件名格式为 “物料编码-泵体编码”，且一次最多上传20个。</span
                   >
                 </el-col>
               </el-row>
@@ -374,7 +391,7 @@
                 <el-avatar
                   class="item__left--avatar"
                   shape="square"
-                  :size="200"
+                  :size="150"
                   fit="fill"
                   :src="userData.photoUrl"
                 ></el-avatar>
@@ -411,16 +428,12 @@
               <el-input
                 v-model.trim="guideForm.deviceNumber"
                 placeholder="请输入设备编码"
-                @change="deviceNumberChange"
+                @input="deviceNumberChange"
               ></el-input>
             </div>
             <div class="item__item">
               <span class="text__title">产品编码：</span>
-              <el-input
-                v-model.trim="guideForm.itemCode"
-                placeholder="请输入产品编码"
-                @keyup.enter.native="guideImport(0)"
-              ></el-input>
+              <el-input v-model.trim="guideForm.itemCode" placeholder="请输入产品编码"></el-input>
               <el-button type="add" @click="guideImport(0)">确认</el-button>
             </div>
             <div class="item__item">
@@ -477,8 +490,8 @@
               <el-table-column prop="qualityState" label="状态" align="center" width="120">
                 <template slot-scope="scope">
                   <span v-if="!scope.row.qualityState">待检验</span>
-                  <span style="color:#67C23A" v-if="scope.row.qualityState === 1">合格</span>
-                  <span style="color:#F56C6C" v-if="scope.row.qualityState === 2">不合格</span>
+                  <span style="color:#67C23A" v-if="scope.row.qualityState == 1">合格</span>
+                  <span style="color:#F56C6C" v-if="scope.row.qualityState == 2">不合格</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -609,6 +622,7 @@ export default {
       roleId: '',
       userId: '',
       deptId: '',
+      rawDeptId: '',
       tabIndex: 0,
       userList: [],
       timer: '',
@@ -620,7 +634,11 @@ export default {
       curItem: {},
       dialogVisibleBook: false,
       userData: {},
-      qualityData: {},
+      qualityData: {
+        firstcheckSquadUser: '--',
+        firstcheckExamUser: '--',
+        secondcheckExamUser: '--'
+      },
       cardInput2: '',
       dialogVisibleQuality: false,
       checkType: '',
@@ -678,7 +696,7 @@ export default {
       cardInput3: '',
       passwordInput3: '',
       columnList4: [
-        { prop: 'itemCode', label: '产品编号' },
+        { prop: 'itemCode', label: '物料编号' },
         { prop: 'partCode', label: '泵体编号', width: 80 },
         { prop: 'createTime', label: '时间' }
       ],
@@ -725,6 +743,13 @@ export default {
     this.roleId = sessionStorage.getItem('roleId') || '';
     this.userId = sessionStorage.getItem('userId') || '';
     this.deptId = sessionStorage.getItem('deptId') || '';
+    if (this.deptId == 7) {
+      this.rawDeptId = 7;
+    }
+    if (this.deptId == 8 || this.deptId == 19 || this.deptId == 20) {
+      this.rawDeptId = 8;
+    }
+
     this.init();
   },
   methods: {
@@ -743,9 +768,9 @@ export default {
     getMainData() {
       taskPlanByUserId().then(res => {
         if (res.code === '0') {
-          const typeName = ['', '计件', '计时', '计件和计时'];
+          const accountTypeNames = ['', '计件', '计时', '计件和计时'];
           for (const i of res.data) {
-            i.accountTypeName = typeName[i.accountType];
+            i.accountTypeName = accountTypeNames[i.accountType];
             i.nowCount = i.nowCount || 0;
             i.produceCount = i.produceCount || 0;
             i.produceProgress = parseInt(i.produceProgress) || 0;
@@ -784,11 +809,28 @@ export default {
           produceTaskId,
           produceTaskPlanId,
           partTaskId,
-          workprocessId,
           taskAssignId,
-          produceState
+          produceState,
+          workprocessType,
+          itemId,
+          itemCode,
+          workprocessId,
+          workprocessCode,
+          productType
         } = this.curItem;
-        const obj = { produceTaskId, produceTaskPlanId, partTaskId, workprocessId, taskAssignId, produceState };
+        const obj = {
+          produceTaskId,
+          produceTaskPlanId,
+          partTaskId,
+          taskAssignId,
+          produceState,
+          workprocessType,
+          itemId,
+          itemCode,
+          workprocessId,
+          workprocessCode,
+          productType
+        };
         updateTaskPlanClaimById(obj).then(res => {
           if (res.code === '0') {
             this.$message.success(res.msg);
@@ -818,8 +860,8 @@ export default {
       this.tabIndex = 1;
       this.getUserData(this.userId);
       this.getQualityData(val.produceTaskPlanId, val.workprocessId);
-      if (this.deptId == 7 || (this.deptId == 8 && this.curItem.productType != 4)) {
-        this.getReportData(val.produceTaskPlanId, val.workprocessId);
+      if (this.curItem.productType != 4) {
+        this.getReportData(val.produceTaskPlanId, val.workprocessId, val.assignUserId);
         if (this.curItem.workprocessCode == this.specialWorkprocessCode) {
           this.getAssembleData();
         }
@@ -845,6 +887,8 @@ export default {
               if (res.data[key] !== '') {
                 const tmp = res.data[key].split('"');
                 res.data[key] = tmp[1];
+              } else {
+                res.data[key] = '--';
               }
             }
             this.qualityData = res.data;
@@ -852,8 +896,8 @@ export default {
         }
       });
     },
-    getReportData(pid, wid) {
-      const obj = { produceTaskPlanId: pid, workprocessId: wid };
+    getReportData(pid, wid, uid) {
+      const obj = { produceTaskPlanId: pid, workprocessId: wid, userId: uid };
       pageByProduceTaskPlanId(obj).then(res => {
         if (res.code === '0') {
           res.data.map((item, index) => {
@@ -864,7 +908,7 @@ export default {
       });
     },
     updateReport() {
-      this.getReportData(this.curItem.produceTaskPlanId, this.curItem.workprocessId);
+      this.getReportData(this.curItem.produceTaskPlanId, this.curItem.workprocessId, this.curItem.assignUserId);
     },
     getGuideData(val) {
       const { current, size } = this.page;
@@ -909,7 +953,7 @@ export default {
       if (num === '0') {
         // 刷新报工记录表格
         this.curItem.nowCount = parseInt(val);
-        this.getReportData(this.curItem.produceTaskPlanId, this.curItem.workprocessId);
+        this.updateReport();
       }
     },
 
@@ -928,8 +972,8 @@ export default {
       });
     },
     qualitySubmit() {
-      const { produceTaskId, produceTaskPlanId, itemId, workprocessId, type } = this.curItem;
-      const obj = { produceTaskId, produceTaskPlanId, itemId, workprocessId, type };
+      const { produceTaskId, produceTaskPlanId, itemId, itemCode, workprocessId, workprocessCode, type } = this.curItem;
+      const obj = { produceTaskId, produceTaskPlanId, itemId, itemCode, workprocessId, workprocessCode, type };
       obj.checkType = this.checkType;
       postQuality(obj)
         .then(res => {
@@ -955,10 +999,9 @@ export default {
       login(obj).then(res => {
         if (res.code == 0) {
           res = res.data;
-          if (res.deptId === this.deptId && res.roleId >= 1000 && res.roleId <= 1099) {
+          if (this.rawDeptId == res.deptId && res.roleId >= 1000 && res.roleId <= 1099) {
             sessionStorage.setItem('quality_userName', JSON.stringify(res.name));
             sessionStorage.setItem('quality_userId', res.id);
-
             // const header = { userId: res.id, userName: encodeURI(res.name) };
             this.qualitySubmit();
           } else {
@@ -995,14 +1038,25 @@ export default {
           this.guideForm.itemCode &&
           this.guideForm.itemCode !== ''
         ) {
-          const { produceTaskPlanId, workprocessId } = this.curItem;
+          const {
+            produceTaskId,
+            produceTaskPlanId,
+            workprocessType,
+            workprocessId,
+            workprocessCode,
+            productType
+          } = this.curItem;
           const { deviceNumber, itemCode } = this.guideForm;
           const obj = {
-            produceTaskPlanId,
-            workprocessId,
             deviceNumber,
             itemCode,
             type: 2,
+            produceTaskId,
+            produceTaskPlanId,
+            workprocessType,
+            workprocessId,
+            workprocessCode,
+            productType,
             productId: this.curItem.itemId,
             productCode: this.curItem.itemCode,
             productModel: this.curItem.itemModel
@@ -1010,7 +1064,7 @@ export default {
           postGuide(obj).then(res => {
             if (res.code === '0') {
               this.$message.success(res.msg);
-              this.curItem.nowCount += 1;
+              this.syncCount();
               this.guideForm.itemCode = '';
               this.getGuideData(this.curItem);
             } else {
@@ -1027,22 +1081,43 @@ export default {
     },
     guideImportVol() {
       if (!isEmpty(this.guideForm.deviceNumber) && !isEmpty(this.guideForm.itemCodeList)) {
-        const { produceTaskPlanId, workprocessId } = this.curItem;
+        const {
+          produceTaskId,
+          produceTaskPlanId,
+          workprocessType,
+          workprocessId,
+          workprocessCode,
+          productType
+        } = this.curItem;
         const { deviceNumber, itemCodeList } = this.guideForm;
-        let obj = { produceTaskPlanId, workprocessId, deviceNumber, type: 2, itemCodeList: [] };
+        let obj = {
+          deviceNumber,
+          type: 2,
+          itemCodeList: [],
+          produceTaskId,
+          produceTaskPlanId,
+          workprocessType,
+          workprocessId,
+          workprocessCode,
+          productType,
+          productId: this.curItem.itemId,
+          productCode: this.curItem.itemCode,
+          productModel: this.curItem.itemModel
+        };
+        let tmp = [];
         for (let item of itemCodeList.split('\n')) {
           if (!isEmpty(item)) {
-            obj.itemCodeList.push(item);
+            tmp.push(item);
           }
         }
-        obj.itemCodeList = this.uniqueArr(obj.itemCodeList); // 批量添加时，产品编码去重
+        obj.itemCodeList = this.uniqueArr(tmp); // 批量添加时，产品编码去重
         postGuideList(obj).then(res => {
           if (res.code === '0') {
             this.$message.success(res.msg);
-            this.curItem.nowCount += obj.itemCodeList.length;
             this.guideForm.itemCodeList = '';
             this.dialogVisibleVol = false;
             this.getGuideData(this.curItem);
+            this.syncCount();
           } else {
             // this.$message.error(res.msg);
           }
@@ -1050,6 +1125,23 @@ export default {
       } else {
         this.$message.warning('请填写设备及产品编码，产品编码以回车换行');
       }
+    },
+    // 刷新生产数量
+    syncCount() {
+      taskPlanByUserId().then(res => {
+        for (const i of res.data) {
+          if (
+            i.produceTaskPlanId == this.curItem.produceTaskPlanId &&
+            i.assignUserId == this.curItem.assignUserId &&
+            i.workprocessId == this.curItem.workprocessId
+          ) {
+            this.curItem.nowCount = i.nowCount;
+            return;
+          } else {
+            this.curItem.nowCount = this.curItem.nowCount;
+          }
+        }
+      });
     },
     beforeclose3() {
       this.dialogVisibleVol = false;
@@ -1082,6 +1174,8 @@ export default {
               let accountTypeNames = ['-', '计件', '计时', '计件、计时组合'];
               for (let item of res) {
                 item.accountTypeName = accountTypeNames[parseInt(item.accountType)];
+                item.createTime = item.createTime ? item.createTime.split(' ')[0] : '';
+                item.finishTime = item.finishTime ? item.finishTime.split(' ')[0] : '';
               }
               this.tableData3 = res;
             } else {
@@ -1262,18 +1356,18 @@ export default {
         element.msRequestFullscreen();
       }
     },
-    // 查看工艺pdf
-    viewPdf(url) {
-      window.open(url);
-      // let pdfWindow = window.open();
-      // pdfWindow.opener = null;
-      // pdfWindow.location = url;
-      // pdfWindow.target = '_blank';
-    },
-    viewExcel(row) {
+    // 查看pdf
+    // viewPdf(url) {
+    //   window.open(url);
+    //   // let pdfWindow = window.open();
+    //   // pdfWindow.opener = null;
+    //   // pdfWindow.location = url;
+    //   // pdfWindow.target = '_blank';
+    // },
+    viewFile(url, name) {
       // 实际会下载
-      getBlob(row.testbillUrl).then(blob => {
-        saveAs(blob, row.testbillName);
+      getBlob(url).then(blob => {
+        saveAs(blob, name);
       });
     },
     uniqueArr(arr) {
@@ -1471,20 +1565,26 @@ export default {
     }
     .detail__item1 {
       .item__container {
-        margin: 0 20px;
+        margin: 0 1rem;
         display: flex;
         flex-flow: row wrap;
       }
       .item__left {
         flex-basis: 40%;
+        margin-left: 2%;
+        margin-right: 8%;
         align-self: center;
-        min-height: 200px;
+        // .item__left--avatar {
+        //     margin-top: -10px;
+        //   }
       }
 
       .item__right {
         flex-basis: 50%;
         display: inline-flex;
         flex-flow: row wrap;
+        font-size: 0.875rem;
+
         // min-width: 200px;
         .item__text {
           margin: 0.5rem 0;
@@ -1500,13 +1600,15 @@ export default {
       flex-flow: column wrap;
       justify-content: flex-start;
       align-content: flex-start;
+
       .item__container {
-        margin: 0 20px;
+        margin: 0 1rem;
         display: inline-flex;
         flex-flow: row wrap;
+        font-size: 0.875rem;
         .item__text {
-          margin: 10px 0;
-          flex-basis: 50%;
+          margin: 10px 1%;
+          flex-basis: 48%;
           color: #321970;
 
           .text__value {
@@ -1516,13 +1618,14 @@ export default {
       }
     }
     .detail__item3 {
-      display: block;
       position: relative;
-      max-height: 400px;
+      .table-box {
+        width: 100%;
+      }
       .el-table {
-        margin-left: 8px;
-        max-width: calc(100% - 17px);
-        align-self: center;
+        // margin-left: 8px;
+        // max-width: calc(100% - 17px);
+        width: calc(100% - 17px);
       }
       .el-table::before {
         height: 0px;
@@ -1543,6 +1646,7 @@ export default {
       .item__item {
         margin: 0.5rem 0 2rem 3rem;
         letter-spacing: 1px;
+        font-size: 0.875rem;
 
         .text__title {
           color: #321970;
@@ -1585,7 +1689,6 @@ export default {
       .left__item {
         margin: 1rem;
         padding: 10px;
-        height: 28%;
         background: #fff;
         border-radius: 3px;
 
@@ -1601,35 +1704,35 @@ export default {
       .detail2__item1 {
         padding-bottom: 10px;
         min-width: 420px;
+
         .item__container {
-          margin: 0 10px;
+          margin: 0 1rem;
           display: flex;
           flex-flow: row wrap;
         }
         .item__left {
-          flex-basis: 50%;
+          flex-basis: 40%;
+          margin-left: 2%;
+          margin-right: 8%;
           align-self: center;
-          min-height: 200px;
-          .item__left--avatar {
-            margin-top: -10px;
-          }
+          // .item__left--avatar {
+          //     margin-top: -10px;
+          //   }
         }
+
         .item__right {
           flex-basis: 50%;
           display: inline-flex;
           flex-flow: row wrap;
-          .item__text {
-            margin: 0.3rem 0;
-            flex-basis: 100%;
-            color: #321970;
+          font-size: 0.875rem;
 
-            .text__value {
-              color: #333;
-            }
+          .item__text {
+            margin: 0.5rem 0;
+            flex-basis: 100%;
           }
-          // .item__text:nth-last-child(1) {
-          //   margin-bottom: 1rem;
-          // }
+          .item__text:nth-last-child(1) {
+            // margin-bottom: 1rem;
+          }
         }
       }
 

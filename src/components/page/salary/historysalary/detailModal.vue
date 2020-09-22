@@ -16,7 +16,7 @@
             v-for="(item, index) in workprocessOptions"
             :key="index"
             :label="item.workprocessName"
-            :value="item.id"
+            :value="item.workprocessId"
             @click.native="workprocessChange(item)"
           >
           </el-option>
@@ -24,7 +24,7 @@
       </el-col>
       <div class="top__btn">
         <el-button type="add" @click="handleQuery">查询</el-button>
-        <el-button type="add" @click="handleExcel">EXCEL 导出</el-button>
+        <el-button type="add" v-show="$_has('HISTORYSALARYEXPORT')" @click="handleExcel">EXCEL 导出</el-button>
       </div>
     </el-row>
     <div class="content__box">
@@ -67,7 +67,7 @@
 
 <script>
 import { getHisSalaryDetail, getProcessListById } from 'api/salary';
-import { export2Excel, export2Excel1 } from '@/utils/util.js';
+import { export2Excel, export2Excel1, isNum } from '@/utils/util.js';
 export default {
   name: 'hisSalaryDetail',
   props: { tabIndex: { type: Number, default: 0 } },
@@ -98,29 +98,39 @@ export default {
   created() {},
   computed: {},
   methods: {
-    init(row, param) {
-      this.getWorkprocessList(row.userId);
+    async init(row, param) {
+      this.parentData = row || {};
       this.param.userId = row.userId || '';
       this.param.startTime = param.startTime;
-      // this.param.workprocessId = this.workprocessOptions[0].id || '';
-      this.parentData = row || {};
-      this.getTableData();
+      this.getWorkprocessList(row.userId, param.startTime);
     },
-    getWorkprocessList(id) {
-      getProcessListById(id).then(res => {
+    getWorkprocessList(id, startTime) {
+      const obj = {
+        userId: id,
+        startTime: startTime
+      };
+      getProcessListById(obj).then(res => {
         this.workprocessOptions = res.data;
+        this.workprocessChange(this.workprocessOptions[0]); // 选中第一个
       });
     },
     workprocessChange(val) {
+      this.param.workprocessId = val.workprocessId;
+      this.param.workprocessType = val.workprocessType;
       this.curWorkprocessName = val.workprocessName;
-      if (val.workprocessCode === this.specialWorkprocessCode) {
+      if (val.workprocessType == 6) {
+        // 只有侧面磨的工序类型是6
         this.isSide = true;
       } else {
         this.isSide = false;
       }
+      this.getTableData();
     },
     // 获取表格数据
     getTableData() {
+      this.columnlist.length = 0;
+      this.columnlist2.length = 0;
+      this.tableData.length = 0;
       this.loading = true;
       for (const key in this.param) {
         if (this.param[key] === '') {
@@ -130,9 +140,6 @@ export default {
       getHisSalaryDetail(this.param)
         .then(res => {
           if (res.code == 0) {
-            this.columnlist.length = 0;
-            this.columnlist2.length = 0;
-            this.tableData.length = 0;
             res = res.data;
 
             if (this.isSide) {
@@ -187,14 +194,22 @@ export default {
                 const key1 = this.columnlist2[i].children[0].prop;
                 let modelCountP = 0;
                 for (let j = 0; j < originLen; j++) {
-                  modelCountP += parseInt(res.dataInfo[j][key1]);
+                  if (isNum(res.dataInfo[j][key1])) {
+                    modelCountP += parseInt(res.dataInfo[j][key1]);
+                  } else {
+                    modelCountP += 0;
+                  }
                 }
                 obj[key1] = modelCountP;
 
                 const key2 = this.columnlist2[i].children[1].prop;
                 let modelCountC = 0;
                 for (let j = 0; j < originLen; j++) {
-                  modelCountC += parseInt(res.dataInfo[j][key2]);
+                  if (isNum(res.dataInfo[j][key2])) {
+                    modelCountC += parseInt(res.dataInfo[j][key2]);
+                  } else {
+                    modelCountC += 0;
+                  }
                 }
                 obj[key2] = modelCountC;
               }
@@ -220,15 +235,29 @@ export default {
               const obj3 = { day: '实得工资（元）' };
               for (let i = 0; i < this.columnlist2.length - 2; i++) {
                 const key1 = this.columnlist2[i].children[0].prop;
-                obj3[key1] = obj[key1] * obj2[key1];
-                totalP += parseFloat(obj3[key1]);
+                // obj3[key1] = (obj[key1] * obj2[key1]).toFixed(2);
+                obj3[key1] = res.salaryResult[2 * i]; // 单列工资
+                // total += parseFloat(obj3[key]); //总工资
+
+                if (isNum(obj3[key1])) {
+                  totalP += parseFloat(obj3[key1]);
+                } else {
+                  totalP += 0;
+                }
+
                 const key2 = this.columnlist2[i].children[1].prop;
-                obj3[key2] = obj[key2] * obj2[key2];
-                totalC += parseFloat(obj3[key2]);
+                // obj3[key2] = obj[key2] * obj2[key2];
+                obj3[key2] = res.salaryResult[2 * i + 1]; // 单列工资
+
+                if (isNum(obj3[key2])) {
+                  totalC += parseFloat(obj3[key2]);
+                } else {
+                  totalC += 0;
+                }
               }
               obj3['staticP'] = totalP;
               obj3['staticC'] = totalC;
-              obj3['staticPC'] = totalP + totalC;
+              obj3['staticPC'] = (totalP + totalC).toFixed(2);
               res.dataInfo.push(obj3);
 
               this.tableData = res.dataInfo;
@@ -236,6 +265,7 @@ export default {
             } else {
               // 正常非侧面磨
               // 处理表头列
+              console.log(this.isSide);
               for (let i = 0; i < res.colInfo.length; i++) {
                 const obj = {
                   label: res.colInfo[i],
@@ -265,7 +295,11 @@ export default {
                 const key = item.prop;
                 let modelCount = 0;
                 for (let i = 0; i < originLen; i++) {
-                  modelCount += parseInt(res.dataInfo[i][key]);
+                  if (isNum(res.dataInfo[i][key])) {
+                    modelCount += parseInt(res.dataInfo[i][key]);
+                  } else {
+                    modelCount += 0;
+                  }
                 }
                 obj[key] = modelCount;
               });
@@ -281,20 +315,22 @@ export default {
               res.dataInfo.push(obj2);
 
               // 处理工资：产量*单价,总工资再累加
+              // console.log(res.salaryResult);
               let total = 0;
               const obj3 = { day: '实得工资（元）' };
               for (let i = 0; i < this.columnlist.length - 1; i++) {
                 const key = this.columnlist[i].prop;
-                obj3[key] = obj[key] * obj2[key]; // 单列工资
+                // obj3[key] = (obj[key] * obj2[key]).toFixed(2); // 单列工资
+                // total += parseFloat(obj3[key]); //总工资
+                obj3[key] = res.salaryResult[i]; // 单列工资
                 total += parseFloat(obj3[key]); //总工资
               }
               obj3['static'] = total;
               res.dataInfo.push(obj3);
-
               this.tableData = res.dataInfo;
             }
+            this.loading = false;
           }
-          this.loading = false;
         })
         .catch(error => {
           this.loading = false;
@@ -308,11 +344,10 @@ export default {
     },
     // Excel
     handleExcel() {
-      let suffix = this.param.startTime || this.getCurTime();
+      let suffix = `${this.parentData.name}-${this.param.startTime}`;
       if (this.curWorkprocessName !== '') {
         suffix = `${suffix}-${this.curWorkprocessName}`;
       }
-
       if (this.isSide) {
         //侧面磨的多表头表格导出
         const colLen = this.columnlist2.length; // 所有原始列（型号列（不定）、统计列、最后人名的统计列）
@@ -337,7 +372,7 @@ export default {
           }
         }
         multiHeader[0] = multiHeaderChild;
-        // 列不定，除非用二十六进制加工得到的columnlist2的长度，但是也不好做。不过由于实际列数不是太多，可以这么做:
+        // TODO：列不定，不好做。不过由于实际列数不是太多，暂时可以这么做:
         const mergesOption = [
           'A1:A2',
           'B1:C1',
@@ -467,6 +502,7 @@ export default {
         const arr = [{ label: '生产日期', prop: 'day' }];
         const cols = arr.concat(this.columnlist);
         export2Excel(cols, this.tableData, `历史工资详情-${suffix}`);
+        debugger;
         this.$message.success('导出成功');
       }
     },
@@ -475,6 +511,9 @@ export default {
       this.param.userId = '';
       this.param.startTime = '';
       this.param.workprocessId = '';
+      this.columnlist.length = 0;
+      this.columnlist2.length = 0;
+      this.tableData.length = 0;
       this.$emit('closeModal');
     }
   }

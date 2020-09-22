@@ -10,6 +10,9 @@
         <el-col :span="2" class="margin">
           <el-button @click="search">查询</el-button>
         </el-col>
+        <div style="flex:1">
+          <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+        </div>
       </el-row>
 
     </div>
@@ -26,16 +29,18 @@
 
 </template>
 <script>
+import moment from 'moment';
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { yieldRank } from 'api/tool'
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'yieldRank',
   components: {
   },
   data() {
     return {
-      dayDate: '',
+      dayDate: [],
       tableData: [],
       chartData: [],
       columnlist: [
@@ -56,9 +61,17 @@ export default {
   },
   created() {
     this.getTableData();
-
+    this.dayDate[0] = `${moment(new Date()).format('YYYY')}-1-1`
+    this.dayDate[1] = moment(new Date()).format('YYYY-MM-DD')
   },
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.tableData, `产量排序-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     search() {
       this.getTableData()
     },

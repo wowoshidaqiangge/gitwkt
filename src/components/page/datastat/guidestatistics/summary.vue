@@ -20,6 +20,9 @@
             <el-button type="success"  icon="el-icon-caret-left" @click="beforMonth">上月</el-button>
             <el-button type="success" @click="afterMonth" >下月  <i class="el-icon-caret-right" ></i></el-button>
           </div>
+           <div style="flex:1;text-align:end">
+              <el-button type="primary" @click="handleExcel">EXCEL 导出</el-button>
+          </div>
         </el-row>
       </el-form>
     </div>
@@ -54,6 +57,7 @@
 <script>
 import moment from 'moment';
 import {getGuideQualityListByModel} from 'api/product'
+import { export2Excel2,} from '@/utils/util.js';
 import Echarts from 'echarts'
 export default {
   name: 'summary.',
@@ -80,6 +84,41 @@ export default {
     // this.getRightChart()
   },
   methods: {
+    handleExcel(){
+      // const multiHeader = [['Id', 'Main Information', '', '', 'Date']]
+      //     const header = ['', 'Title', 'Author', 'Readings', '']
+      //     const filterVal = ['id', 'title', 'author', 'pageviews', 'display_time']
+      //     const list = this.list
+      //     const data = this.formatJson(filterVal, list)
+      //     const merges = ['A1:A2', 'B1:D1', 'E1:E2']
+       console.log(this.columnlist1)
+      //  const multiHeader = []
+       const header = []
+       const arr =[ ]
+       const data = this.tableData1
+       const filterVal = []
+       const merges = ['A1:A2','B1:C1','D1:E1','F1:G1','H1:I1','J1:K1','L1:M1','N1:O1','P1:Q1','R1:S1','T1:U1','V1:W1','X1:Y1',"Z1:AA1",'AB1:AC1','AD1:AE1','AF1:AG1','AH1:AI1']
+       this.columnlist1.map((item,index)=>{
+          if(index===0){
+            arr.push(item.label)
+            header.push('')
+            filterVal.push(item.prop)
+          }else{
+            item.chilend.map((v,i)=>{
+                header.push(v.label)
+                filterVal.push(v.prop)
+                if(i%2===0){
+                  arr.push(item.label)
+                }else{
+                  arr.push('')
+                }
+            })
+          }
+       })
+       let multiHeader = [arr]
+      //  console.log(header,arr,filterVal,merges.slice(0,this.columnlist1.length))
+       export2Excel2(header,data,`${this.value2}月汇总分析`,filterVal,multiHeader,merges.slice(0,this.columnlist1.length))
+    },
     getGuideQualityListByModel(){
         this.load = true
       getGuideQualityListByModel({monthParam:this.value2}).then(res=>{
@@ -87,12 +126,14 @@ export default {
         if(res.code==='0'){
           // 处理表格格式
           let arr = [{label:'规格',prop:'rankName'}]
+          let arr1 = [{rankName:'报检数量'}]
           res.data.guideQualityTypeList.map((item,index)=>{
               item.guideModelQualityList.map((v,i)=>{
                 let a = res.data.guideQualityModelList.filter(d=>d===v.productModel)
                 if(a){
                   item[`value${a[0]}`]  = v.rankCount
                   item[`ratio${a[0]}`]  = v.rankCountRatio
+                  arr1[0][`value${a[0]}`] = v.total
                 }
               })
           })
@@ -110,7 +151,6 @@ export default {
                  }else{
                    result.push('-')
                  }
-                 
              })
              if(index===0){
                series.push({ name: item.rankName,type: 'bar',label:{"show":true,formatter: '{@score}%'},barWidth:50,itemStyle:{color:"#9BBB59"},stack: '数量', data:result})
@@ -120,6 +160,7 @@ export default {
              
           })
           this.columnlist1 = arr
+          res.data.guideQualityTypeList.unshift(...arr1)
           this.tableData1 = res.data.guideQualityTypeList
         
           this.getRightChart(res.data.guideQualityModelList,series)
@@ -154,7 +195,7 @@ export default {
               // data: ['百度', '谷歌', '必应', '其他']
                 type: 'scroll',
                 orient: 'vertical',
-                right: 10,
+                right: 5,
                 top:50
           },
           grid: {

@@ -57,14 +57,20 @@
                             align="center"
                         >
                         </el-table-column>
-                        <el-table-column label="操作" align="center"> 
+                        <el-table-column label="查看" align="center"> 
                                     <template slot-scope="scope">
                                         <el-button
-                                            type="danger"
+                                            type="add"
                                             plain
-                                            class="red"
+                                            v-if="scope.row.productType==='线轨' && $_has('GUIDETXGQUALITYOPERATION')"
                                             @click="handledistribute(scope.row)"
-                                        >查看</el-button>
+                                        >加工路线</el-button>
+                                        <el-button
+                                            type="add"
+                                            plain
+                                            v-if="scope.row.productType==='滑块' && $_has('GUIDETHKQUALITYOPERATION')"
+                                            @click="handledistribute(scope.row)"
+                                        >加工路线</el-button>
                                     </template>
                             </el-table-column>
                 </el-table>
@@ -111,7 +117,7 @@ export default {
                 {label:"未派单",value:1},
                 {label:"未领单",value:2},
                 {label:"生产中",value:3},
-                {label:"装配",value:4},
+                // {label:"装配",value:4},
                 {label:"已完工",value:5},
                 {label:"已锁定",value:6}
               
@@ -180,7 +186,6 @@ export default {
         },
         //操作
         handledistribute(info){
-         
             this.isdetails = true
             if(info.productType==='线轨'){
                 this.isdaogui = true

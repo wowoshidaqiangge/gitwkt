@@ -49,14 +49,15 @@
             <template slot-scope="scope">
               <span style="color:#E6A23C" v-if="scope.row.state == 1">{{ scope.row.produceTaskPlanState }}</span>
               <span style="color:#409EFF" v-if="scope.row.state == 2">{{ scope.row.produceTaskPlanState }}</span>
-              <span style="color:#67C23A" v-if="scope.row.state == 3 || scope.row.state == 4">{{
-                scope.row.produceTaskPlanState
-              }}</span>
+              <span
+                style="color:#67C23A"
+                v-if="scope.row.state == 3 || scope.row.state == 4 || scope.row.state >= 10"
+                >{{ scope.row.produceTaskPlanState }}</span
+              >
               <span style="color:#909399" v-if="scope.row.state == 5">{{ scope.row.produceTaskPlanState }}</span>
               <span style="color:#F56C6C" v-if="scope.row.state == 6 || scope.row.state == 7">{{
                 scope.row.produceTaskPlanState
               }}</span>
-              <span style="color:green" v-if="scope.row.state >= 10">{{ scope.row.produceTaskPlanState }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="produceDuration" label="生产用时" align="center" width="120">
@@ -66,15 +67,8 @@
           </el-table-column>
           <el-table-column label="操作" align="center">
             <template slot-scope="scope">
-              <el-button
-                v-if="scope.row.state != 5 && scope.row.state != 6"
-                type="add"
-                plain
-                @click="handleEdit(scope.$index, scope.row)"
-                >派单</el-button
-              >
-              <el-button v-if="scope.row.state == 5" type="add" plain @click="handleEdit(scope.$index, scope.row)"
-                >报工记录</el-button
+              <el-button v-if="scope.row.state != 6" type="add" plain @click="handleEdit(scope.$index, scope.row)"
+                >加工路线</el-button
               >
             </template>
           </el-table-column>
@@ -185,11 +179,13 @@
 <script>
 import { produceTaskStateList } from 'api/index';
 import { produceTaskPlanpage } from 'api/product';
+import productDetails from './productDetails';
 
 export default {
   name: 'guideTaskPlan',
   components: {
-    productDetails: () => import('./productDetails')
+    // productDetails: () => import('./productDetails')
+    productDetails
   },
   data() {
     return {
@@ -278,6 +274,8 @@ export default {
     getStateList() {
       produceTaskStateList().then(res => {
         if (res.code === '0') {
+          res.data[2].enumValue = '生产中';
+          res.data.splice(3, 1);
           this.stateList = res.data;
           console.log(this.stateList);
         }
@@ -330,13 +328,13 @@ export default {
       this.getTableData();
     },
 
-    // 编辑表单：
+    // 详情表单：
     handleEdit(index, row) {
+      console.log(row);
       this.detailFlag = true;
-      this.$nextTick(() => {
-        this.$refs.productDetails.getBaseInfo(index, row);
-        this.$refs.productDetails.getTableData(this.param.type, row.produceTaskPlanId);
-      });
+      const obj = { type: this.param.type, produceTaskPlanId: row.produceTaskPlanId, state: row.state };
+      this.$refs.productDetails.getBaseInfo(row);
+      this.$refs.productDetails.getTableData(obj);
     },
     handleUpdateData() {
       this.getTableData();
@@ -344,6 +342,7 @@ export default {
     handleClose() {
       // this.modal.dialogVisible = false;
       this.detailFlag = false;
+      this.getTableData();
     }
   }
 };

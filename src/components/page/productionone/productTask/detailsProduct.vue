@@ -46,17 +46,16 @@
                         <template slot-scope="scope">
                             <el-button
                                 type="success"
-                                v-if="scope.row.state==1 || scope.row.state==2"
+                                v-if="(scope.row.state==1 || scope.row.state==2) && wayinfo.state!=5"
                                 plain
                                 class="red"
                                 icon='el-icon-edit-outline'
                                 @click="handledit(scope.row,1)"
                             ></el-button>
                         </template> 
-                    </el-table-column>               -->
+                    </el-table-column>            
             </el-table>
         </div>
-       
         <div style="padding-left:20px">
             <div style="padding:10px 0 10px 0px;font-weight:600;font-size:15px">装配:</div>
             <el-table
@@ -87,7 +86,7 @@
                         <template slot-scope="scope">
                             <el-button
                                 type="success"
-                                v-if="scope.row.state==1 || scope.row.state==2"
+                                v-if="(scope.row.state==1 || scope.row.state==2) && wayinfo.state!=5 "
                                 plain
                                 class="red"
                                 icon='el-icon-edit-outline'
@@ -131,8 +130,8 @@ export default {
                {label:'数量',prop:'partCount'},
                {label:'类型',prop:'type1'},
                {label:'当前工序',prop:'produceTaskPlanState'},
-               {label:'报工数',prop:'reportCount'},
-               {label:'合格数',prop:'qualifiedCount'},
+            //    {label:'报工数',prop:'reportCount'},
+            //    {label:'合格数',prop:'qualifiedCount'},
                {label:'开始时间',prop:'planStartTime'},
                {label:'结束时间',prop:'planEndTime'},
            ],
@@ -143,8 +142,8 @@ export default {
                {label:'规格型号',prop:'model'},
                {label:'数量',prop:'partCount'},
                {label:'当前工序',prop:'produceTaskPlanState'},
-               {label:'报工数',prop:'reportCount'},
-               {label:'合格数',prop:'qualifiedCount'},
+            //    {label:'报工数',prop:'reportCount'},
+            //    {label:'合格数',prop:'qualifiedCount'},
                {label:'开始时间',prop:'planStartTime'},
                {label:'结束时间',prop:'planEndTime'},
            ],
@@ -226,6 +225,7 @@ export default {
         handleupdate(info,type){
             // this.detailVisble = true
             this.$refs.detailModal.getProcessListByPlanId(info,type,this.prolist)
+           
             this.detailVisble = true
         },
         // 获取最大工号

@@ -15,7 +15,7 @@
                 <div class="infolist">
                     <div class="info" v-for="(item,index) in prolist" :key="index">
                         <p><span>{{item.name}}：</span></p>
-                        <p>{{item.value}}</p>
+                        <p :title="item.value" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{item.value}}</p>
                     </div>
                   
                     <div class="info">
@@ -156,10 +156,10 @@ export default {
             ],
             formLabelWidth:'80px',
             columnlist:[
-                {label:'派工人员',prop:'assignUser',width:"50px"},
-                {label:'派工日期',prop:'createTime'},
+                {label:'派工人员',prop:'createUser'},
+                {label:'派工日期',prop:'createTime',width:"85px"},
                 {label:'设备编号',prop:'deviceNumber'},
-                {label:'工作人员',prop:'createUser',width:"70px"},
+                {label:'工作人员',prop:'assignUser',width:"70px"},
                 {label:'结算方式',prop:'accountType1',width:"50px"},
                 {label:'计时工价',prop:'timePrice',width:"50px"},
                 {label:'计时时间',prop:'manHour',width:"50px"},
@@ -179,7 +179,7 @@ export default {
                 {label:'巡检',prop:'secondcheckaExamUser',width:"70px"},
                 {label:'完检',prop:'finishcheckExamUser',width:"70px"},
                 {label:'CPK值',prop:'cpkValue',width:"50px"},
-                {label:'完成时间',prop:'finishTime'},
+                {label:'完成时间',prop:'finishTime',width:"85px"},
             ],
             innerVisible:false,
             form1:{},
@@ -191,7 +191,8 @@ export default {
             pagesize:1,
             totals:0,
             prolist:[],
-            wayinfo:''
+            wayinfo:'',
+            tablelist1:[]
         }
     },
     created(){
@@ -204,11 +205,23 @@ export default {
     
     },
     methods: {
-        handleExcel() {
-            const filterVal = ['workKind','workprocessName','assignUser','creatTime','deviceNumber','createUser',"accountType","timePrice","assignCount",
+        handleExcel:async function() {
+            await this.allgetProcessListByPartTaskId(this.wayinfo)
+            const filterVal = ["index",'workKind','workprocessName','assignUser','createTime','deviceNumber','createUser',"accountType","timePrice","manHour","assignCount",
             "industrialWaste","scrapWaste","concessionWork","relegationWork","concessionMaterial","relegationMaterial","qualified","supplement",
             "firstcheckSquadUser","firstcheckExamUser","secondcheckaExamUser","finishcheckExamUser","cpkValue","finishTime"]
-            export2Excel1(tHeader, this.tablelist, '加工路线详情',filterVal,multiHeader,multiHeader2,merges);
+            export2Excel1(tHeader, this.tablelist1, `${this.wayinfo.taskNumber}加工路线详情`,filterVal,multiHeader,multiHeader2,merges);
+        },
+        allgetProcessListByPartTaskId: async function(info){
+            let obj ={
+                id:info.id,current:1,size:100,state:info.state
+            }
+            await getProcessListByPartTaskId(obj).then(res=>{
+                if(res.code==='0'){
+                    handle(res.data.records)
+                    this.tablelist1 =  res.data.records
+                }
+            })
         },
         // 加工路线
         getProcessListByPartTaskId: async function(info){
@@ -223,14 +236,14 @@ export default {
               {name:"计划产量",value:pro.planYield},
               {name:"开始时间",value:pro.planStartTime},
               {name:"结束时间",value:pro.planEndTime},
-              {name:"发料人",value:pro.createUser},
+              {name:"发料人",value:pro.partBillUser},
               {name:"状态",value:pro.partTaskState},
               {name:"生产部门",value:pro.deptName},
               {name:"备注",value:pro.remark},
           ]
           this.prolist = arr
             let obj ={
-                ...this.page,id:info.id
+                ...this.page,id:info.id,state:pro.state
             }
            await getProcessListByPartTaskId(obj).then(res=>{
                 if(res.code==='0'){

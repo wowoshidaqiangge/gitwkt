@@ -10,11 +10,14 @@
         <el-col :span="2" class="margin">
           <el-button @click="search">查询</el-button>
         </el-col>
+        <div style="flex:1">
+          <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+        </div>
       </el-row>
 
     </div>
     <div class="middle">
-      <el-table :data="classifyData" border :summary-method="getSummaries" show-summary style="width: 100%">
+      <el-table :data="tableData" border :summary-method="getSummaries" show-summary style="width: 100%">
         <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label"
           align="center"></el-table-column>
       </el-table>
@@ -29,6 +32,8 @@
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { classify } from 'api/tool'
+import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'classify',
   components: {
@@ -36,8 +41,8 @@ export default {
   data() {
     return {
       chartData: [],
-      dayDate: '',
-      classifyData: [],
+      dayDate: [],
+      tableData: [],
       columnlist: [
         { prop: 'index', label: '序号' },
         { prop: 'productType', label: '存货大类' },
@@ -56,8 +61,17 @@ export default {
   },
   created() {
     this.getTableData();
+    this.dayDate[0] = `${moment(new Date()).format('YYYY')}-1-1`
+    this.dayDate[1] = moment(new Date()).format('YYYY-MM-DD')
   },
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.tableData, `分类统计-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     search() {
       this.getTableData()
     },
@@ -82,7 +96,7 @@ export default {
             item.rate = (item.rate * 100).toFixed(3)
             item.preRate = (item.preRate * 100).toFixed(3)
           })
-          this.classifyData = res.data
+          this.tableData = res.data
         }
         this.getChart()
       })
@@ -135,6 +149,8 @@ export default {
         yarr1.push(item.produceCount)
         yarr2.push(item.preRate)
       })
+      let max = parseInt(Math.max(...yarr1) * 1.2)
+      console.log(max)
       let option = {
         title: {
           text: '各成品柏拉图',
@@ -143,6 +159,19 @@ export default {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: function (data) {
+            let target;
+            let res = `${data[0].name}</br>`
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].seriesName == '月度生产') {
+                target = data[i].value
+              } else if (data[i].seriesName == '累加') {
+                target = data[i].value + '%'
+              }
+              res += `${data[i].marker} ${data[i].seriesName}：${target}</br>`
+            }
+            return res;
+          },
           axisPointer: {
             type: 'cross',
             crossStyle: {
@@ -154,7 +183,6 @@ export default {
         legend: {
           show: true,
           bottom: '5%',
-          // data: ['月度生产', '成品同比']
         },
         xAxis: [
           {
@@ -172,13 +200,13 @@ export default {
         yAxis: [
           {
             type: 'value',
+            max: max,
             name: '数量(台)',
           },
           {
             type: 'value',
             name: '',
             // min: 60,
-            // max: 100,
             // interval: 10,
             axisLabel: {
               formatter: '{value} %'
@@ -205,7 +233,7 @@ export default {
             }
           },
           {
-            name: '成品同比',
+            name: '累加',
             type: 'line',
             smooth: true,
             symbolSize: 6,

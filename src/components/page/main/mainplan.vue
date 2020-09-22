@@ -1,7 +1,23 @@
 <template>
   <div class="mainplan">
     <div class="top">
-      <el-button type="add" icon="el-icon-circle-plus-outline" @click="add">新增</el-button>
+      <el-row type="flex" justify="end">
+        <div style="flex:1">
+          <el-button type="add" icon="el-icon-circle-plus-outline" @click="add">新增</el-button>
+        </div>
+        <el-col :span="3" style="margin:0 20px">
+
+          <el-select v-if="roleId==1||roleId==0" v-model="toType" placeholder="选择部门" style="width:100%">
+            <el-option v-for="item in deviceList" :label="item.enumValue" :key='item.enumKey' :value="item.enumKey">
+            </el-option>
+          </el-select>
+        </el-col>
+        <div>
+          <el-button type="primary" @click="onReset" style="float:right;margin-left:10px">重置</el-button>
+          <el-button type="danger" @click="onSubmit" style="float:right">查询</el-button>
+        </div>
+      </el-row>
+
     </div>
     <div class="bot">
       <el-table :data="tableData" stripe style="width: 100%">
@@ -28,6 +44,7 @@
 
 <script>
 import { maintenancepage, maintenancedelete } from 'api/main';
+import { deviceTypeList } from 'api/index'
 import planModal from './planmodal';
 export default {
   name: 'mainplan',
@@ -36,6 +53,7 @@ export default {
   },
   data() {
     return {
+      roleId: '',
       columnlist: [
         { prop: 'index', label: '序号' },
         { prop: 'deviceName', label: '设备名称' },
@@ -51,6 +69,11 @@ export default {
         { prop: 'remark', label: '备注' },
       ],
       tableData: [],
+      deviceList: [],//部门列表
+      searchInfo: {
+
+      },
+      toType: '', // 部门值
       screenWidth: document.body.clientHeight - 215 + 'px',
       page: {
         current: 1,
@@ -62,8 +85,13 @@ export default {
       tit: ''
     };
   },
-  computed: {},
+  mounted() {},
   created() {
+    this.roleId = sessionStorage.getItem('roleId')
+    if(this.roleId==1||this.roleId==0){
+      this.toType='1'
+    }
+    this.getdeviceTypeList()
     this.getmaintenancepage();
   },
   methods: {
@@ -71,8 +99,25 @@ export default {
       this.tit = '新增';
       this.dialogFormVisible = true;
     },
+    // 获取部门(设备类型)
+    getdeviceTypeList() {
+      deviceTypeList().then(res => {
+        if (res.code === '0') {
+          this.deviceList = res.data
+        }
+      })
+    },
+    onSubmit() {
+      this.getmaintenancepage()
+    },
+    onReset() {
+      this.toType = ''
+      this.page.current = 1
+      this.getmaintenancepage()
+    },
     getmaintenancepage() {
-      maintenancepage(this.page).then(res => {
+      let obj = { ...this.page, toType: this.toType }
+      maintenancepage(obj).then(res => {
         if (res.code === '0') {
           res.data.records.map((item, index) => {
             item.period = item.period == 'month' ? '月' : '年';
@@ -80,7 +125,6 @@ export default {
             if (item.dateTime) {
               item.dateTime = item.dateTime + ':00'
             }
-
             item.index = index + 1;
           });
           this.pagesize = parseInt(res.data.current);

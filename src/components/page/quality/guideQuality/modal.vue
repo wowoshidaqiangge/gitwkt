@@ -4,7 +4,7 @@
     :title="tit" 
     :destroy-on-close='isclose'
     :visible.sync="dialogFormVisible"
-    width='40%' 
+    width='45%' 
     :before-close='beforclose' 
     center>
         <el-row>
@@ -64,6 +64,49 @@
                             align="center"
                            >
                         </el-table-column>
+                        <el-table-column min-width="150px" label="工资等级">
+                           <template slot-scope="{row}">
+                                <template v-if="row.edit">
+                                    <el-select v-model="row.salaryRank" size="mini" style="margin-right:20px;width:80px">
+                                        <el-option
+                                        v-for="item in options2"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                        </el-option>
+                                    </el-select>
+                                    <el-button
+                                    class="cancel-btn"
+                                    size="mini"
+                                    type="warning"
+                                    @click="cancelEdit(row)"
+                                    >
+                                    取消
+                                    </el-button>
+                                </template>
+                                <span v-else>{{ row.salaryRank }}</span>
+                           </template>
+                        </el-table-column>
+                        <el-table-column align="center" label="操作">
+                            <template slot-scope="{row}">
+                            <el-button
+                                v-if="row.edit"
+                                type="success"
+                                size="small"
+                                @click="confirmEdit(row)"
+                            >
+                               确认
+                            </el-button>
+                            <el-button
+                                v-else
+                                type="primary"
+                                size="small"
+                                @click="row.edit=!row.edit"
+                            >
+                                修改
+                            </el-button>
+                            </template>
+                        </el-table-column>
                       </el-table>  
                  </el-col>
                    <div class="page">
@@ -85,7 +128,7 @@
   </div>
 </template>
 <script>
-import {qualityConfigPage,qualityConfig} from 'api/product'
+import {qualityConfigPage,qualityConfig,qualityConfigput} from 'api/product'
 export default {
     name: 'guideQualitymodal',
     props:{
@@ -117,15 +160,20 @@ export default {
                 {label:'正常',value:'1'},
                 {label:'降级',value:'2'},
                 {label:'无效',value:'3'},
-              
-               
+
+            ],
+            options2:[
+                {label:'正常',value:'正常'},
+                {label:'降级',value:'降级'},
+                {label:'无效',value:'无效'},
+
             ],
             tableData:[],
             tableList:[
                 {label:'序号',value:"index",},
                 {label:'等级',value:"rank"},
                 {label:'等级描述',value:"remark"},
-                {label:'工资等级',value:"salaryRank"},
+                // {label:'工资等级',value:"salaryRank"},
             ],
             page:{
                 current:1,
@@ -145,10 +193,37 @@ export default {
       
     },
     methods: {
+        confirmEdit(row){
+            // row.originalTitle = row.salaryRank
+            row.edit = false
+            let sala = ''
+            switch (row.salaryRank) {
+                 case "正常":
+                     sala = "1";
+                     break;
+                 case "降级":
+                     sala = "2";
+                     break;
+                 case "无效":
+                     sala = "3";
+            } 
+         
+            qualityConfigput({id:row.id,salaryRank:sala}).then(res=>{
+                if(res.code==='0'){
+                    this.$message.success(res.msg)
+                    this.getqualityConfigPage()
+                }
+            })
+        },
+        cancelEdit(row){
+            row.salaryRank = row.originalTitle
+            row.edit = false
+        },
        getqualityConfigPage(){
            qualityConfigPage(this.page).then(res=>{
                if(res.code==='0'){
                    res.data.records.map((item,index)=>{
+                     this.$set(item, 'edit', false) 
                        item.index= index+1
                        switch (item.salaryRank) {
                         case 1:
@@ -160,6 +235,7 @@ export default {
                         case 3:
                             item.salaryRank = "无效";
                     } 
+                    item.originalTitle = item.salaryRank
                    })
                    this.pagesize = parseInt(res.data.current)
                    this.totals = parseInt(res.data.total)
@@ -171,14 +247,14 @@ export default {
            qualityConfig(this.form).then(res=>{
                if(res.code==='0'){
                    this.$message.success(res.msg)
-                   
                    this.getqualityConfigPage()
                    this.form = {}
                }
            })
        },
-       handleCurrentChange(){
-
+       handleCurrentChange(val){
+           this.page.current = val
+           this.getqualityConfigPage()
        },
        close(){
            this.init()

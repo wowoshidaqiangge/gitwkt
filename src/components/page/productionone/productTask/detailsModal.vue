@@ -4,7 +4,7 @@
     title="加工路线详情" 
     :destroy-on-close='isclose'
     :visible.sync="detailVisble"
-    width='81%' 
+    width='82%' 
     :before-close='beforclose' 
     center>
         <div class="detailinfo">
@@ -119,24 +119,62 @@
                     append-to-body>
                      <el-row>
                         <el-form :model="form1" :rules="rules1"  ref="form1">
-                            <el-col :span="11">
-                                <el-form-item label="数量" :label-width="formLabelWidth"  prop="partCount">
-                                        <el-input v-model="form1.partCount" ></el-input>
+                            <el-col :span="6">
+                                <el-form-item    prop="partCount">
+                                        <el-input v-model="form1.partCode"  placeholder="请输入泵体编号">
+                                            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+                                        </el-input>
                                 </el-form-item>
                             </el-col>
-                            <el-col :span="11"> <el-button type="add" >查看</el-button></el-col>
+                            <el-col :span="11"> <el-button type="add" style="margin-left:10px" @click="searchpro">搜索</el-button></el-col>
+                            <el-col :span="24">
+                                <el-table
+                                    :data="tableData"
+                                    style="width: 100%">
+                                    <el-table-column
+                                        v-for="(item,index) in columnlistable"
+                                        :key="index+100"
+                                        :width="item.width"
+                                        :prop="item.prop"
+                                        :label="item.label"
+                                        align="center">
+                                    </el-table-column>
+                                    <el-table-column label="附件"  align="center">
+                                        <template slot-scope="scope">
+                                            <el-button
+                                                type="success"
+                                                v-if="scope.row.testbillName"
+                                                plain
+                                                @click="handledlook(scope.row)"
+                                            >查看</el-button>
+                                        </template> 
+                                    </el-table-column>   
+                                </el-table>
+                            </el-col>
+                            <el-col>
+                               <div>
+                                    <el-pagination
+                                      :background='true'
+                                      style="text-align:end;margin-top:10px"
+                                        :current-page.sync="pagesize1"
+                                        @current-change="handleCurrentChange1"
+                                        layout="total, prev, pager, next"
+                                        :total="totals1">
+                                    </el-pagination>
+                               </div>
+                            </el-col>
                         </el-form>
                     </el-row>
-                    <div slot="footer" class="dialog-footer">
+                    <!-- <div slot="footer" class="dialog-footer">
                         <el-button @click="innerVisible=false">取 消</el-button>
                         <el-button type="primary" @click="marksure1('form1')" >确 定</el-button>
-                    </div>
+                    </div> -->
              </el-dialog>
     </el-dialog>
   </div>
 </template>
 <script>
-import {getProcessListByPlanId} from 'api/product'
+import {getProcessListByPlanId,produceWorkprocessQualityPage} from 'api/product'
 import {export2Excel1,multiHeader,tHeader,multiHeader2,merges,handle,getBlob, saveAs } from '@/utils/util.js';
 
 export default {
@@ -155,13 +193,13 @@ export default {
             tablelist:[],
             formLabelWidth:'80px',
             columnlist:[
-                {label:'派工人员',prop:'assignUser',width:"50px"},
-                {label:'派工日期',prop:'createTime'},
+                {label:'派工人员',prop:'createUser',},
+                {label:'派工日期',prop:'createTime',width:"85px"},
                 {label:'设备编号',prop:'deviceNumber'},
-                {label:'工作人员',prop:'createUser',width:"70px"},
+                {label:'工作人员',prop:'assignUser',width:"70px"},
                 {label:'结算方式',prop:'accountType1',width:"50px"},
-                {label:'计时工价',prop:'timePrice',width:"50px"},
-                {label:'计时时间',prop:'manHour',width:"50px"},
+                {label:'计时工价',prop:'timePrice',width:"60px"},
+                {label:'计时时间',prop:'manHour',width:"60px"},
                 {label:'派件数量',prop:'assignCount',width:"50px"},
             ],
             columnlist1:[
@@ -178,7 +216,7 @@ export default {
                 {label:'巡检',prop:'secondcheckaExamUser',width:"70px"},
                 {label:'完检',prop:'finishcheckExamUser',width:"70px"},
                 {label:'CPK值',prop:'cpkValue',width:"50px"},
-                {label:'完成时间',prop:'finishTime'},
+                {label:'完成时间',prop:'finishTime',width:"85px"},
             ],
             innerVisible:false,
             form1:{},
@@ -187,11 +225,25 @@ export default {
                 current:1,
                 size:10
             },
+            page1:{
+                current:1,
+                size:10
+            },
             pagesize:1,
             totals:0,
+            pagesize1:1,
+            totals1:0,
             prolist:[],
             wayinfo:'',
             waytype:'',
+            tablelist1:[],
+            tableData:[],
+            columnlistable:[
+                {label:'序号',prop:'index',width:"70px"},
+                {label:'产品编号',prop:'itemCode'},
+                {label:'泵体编号',prop:'partCode'},
+                {label:'时间',prop:'createTime'},
+            ]
         }
     },
     created(){
@@ -204,11 +256,24 @@ export default {
     
     },
     methods: {
-        handleExcel() {
-            const filterVal = ['workKind','workprocessName','assignUser','creatTime','deviceNumber','createUser',"accountType","timePrice","assignCount",
+        handleExcel:async function() {
+            await this.allgetProcessListByPlanId(this.wayinfo,this.waytype,this.prolist)
+            const filterVal = ['index','workKind','workprocessName','assignUser','createTime','deviceNumber','createUser',"accountType","timePrice","manHour","assignCount",
             "industrialWaste","scrapWaste","concessionWork","relegationWork","concessionMaterial","relegationMaterial","qualified","supplement",
             "firstcheckSquadUser","firstcheckExamUser","secondcheckaExamUser","finishcheckExamUser","cpkValue","finishTime"]
-            export2Excel1(tHeader, this.tablelist, '产品任务加工路线详情',filterVal,multiHeader,multiHeader2,merges);
+            export2Excel1(tHeader, this.tablelist1, `${this.wayinfo.taskNumber}产品任务加工路线详情`,filterVal,multiHeader,multiHeader2,merges);
+        },
+        // 获取所有
+        allgetProcessListByPlanId: async function(info,type,list){
+            let obj ={
+                produceTaskPlanId:info.produceTaskPlanId,type:type,current:1,size:100,state:info.state
+            }
+            await getProcessListByPlanId(obj).then(res=>{
+                if(res.code==='0'){
+                    handle(res.data.records)
+                    this.tablelist1 =  res.data.records
+                }
+            })
         },
         // 加工路线
         getProcessListByPlanId: async function(info,type,list){
@@ -223,24 +288,19 @@ export default {
                 {name:'开始时间',value:pro.planStartTime},
                 {name:'结束时间',value:pro.planEndTime},
                 {name:'状态',value:pro.produceTaskPlanState},
-                
-               
             ]
             if(type===1){
                 this.recording="质检记录"
                 this.recordtitle="零件基本信息"
-               
                 arr.unshift({name:'零件生产工单',value:pro.taskNumber})
             }else{
                 this.recording="产品测试单"
                 this.recordtitle="装配基本信息"
-              
                 arr.unshift({name:'产品装配工单',value:pro.taskNumber})
             }
             let obj ={
-                ...this.page,produceTaskPlanId:info.produceTaskPlanId,type:type
+                ...this.page,produceTaskPlanId:info.produceTaskPlanId,type:type,state:info.state
             }
-            
             this.wayinfo = pro
             this.waytype = type
             this.prolist = arr
@@ -254,15 +314,32 @@ export default {
                 }
             })
         },
-        looktest(){
-            // this.innerVisible = true
-            if(!this.wayinfo.workprocesscheckBillUrl){
-                this.$message.error('暂无文件')
-                return
+        looktest:async function(){
+            if(this.recording==="质检记录"){
+                if(!this.wayinfo.workprocesscheckBillUrl){
+                    this.$message.error('暂无文件')
+                    return
+                }
+                getBlob(this.wayinfo.workprocesscheckBillUrl).then(blob => {
+                    saveAs(blob, this.wayinfo.workprocesscheckBillName);
+                });
+            }else{
+                await this.getproduceWorkprocessQualityPage()
+                this.innerVisible = true
             }
-            getBlob(this.wayinfo.workprocesscheckBillUrl).then(blob => {
-                saveAs(blob, this.wayinfo.workprocesscheckBillName);
-            });
+        },
+        //装配测试单
+        getproduceWorkprocessQualityPage:async function(){
+            await produceWorkprocessQualityPage({produceTaskPlanId:this.wayinfo.produceTaskPlanId,type:1,...this.page1,...this.form1}).then(res=>{
+                if(res.code==='0'){
+                    res.data.records.map((item,index)=>{
+                        item.index= index+1
+                    })
+                    this.pagesize1 = parseInt(res.data.current)
+                    this.totals1 = parseInt(res.data.total)
+                    this.tableData = res.data.records
+                }
+            })
         },
        close(){
            this.init()
@@ -271,8 +348,11 @@ export default {
        //初始化
        init(){
           this.tablelist = []
+          this.page={
+              current:1,
+              size:10
+          }
        },
-      
        marksure(ruleForm){
            
        },
@@ -286,8 +366,20 @@ export default {
        handleCurrentChange(val){
            this.page.current = val
            this.getProcessListByPlanId(this.wayinfo,this.waytype,this.prolist)
+       },
+       searchpro(){
+            this.page1.current = 1
+           this.getproduceWorkprocessQualityPage()
+       },   
+       handleCurrentChange1(val){
+           this.page1.current = val
+           this.getproduceWorkprocessQualityPage()
+       },
+       handledlook(info){
+            getBlob(info.testbillUrl).then(blob => {
+                    saveAs(blob, info.testbillName);
+            });
        }
-      
     }
 }
 </script>

@@ -65,10 +65,12 @@ export default {
         obj.partlNumber = JSON.parse(JSON.stringify(item))['物料图号'];
         obj.model = JSON.parse(JSON.stringify(item))['规格型号'];
         obj.unit = JSON.parse(JSON.stringify(item))['基本单位'];
-        obj.rawmaterialCodes = JSON.parse(JSON.stringify(item))['关联原材料（多个工序，中间用顿号 、隔开）'].split(
+        obj.rawmaterialCodes = JSON.parse(JSON.stringify(item))['关联原材料编码（多个工序，中间用顿号 、隔开）'].split(
           '、'
         );
-        obj.workprocessCodes = JSON.parse(JSON.stringify(item))['关联工序（多个工序，中间用顿号 、隔开）'].split('、');
+        obj.workprocessCodes = JSON.parse(JSON.stringify(item))['关联工序编码（多个工序，中间用顿号 、隔开）'].split(
+          '、'
+        );
         obj.deptName = JSON.parse(JSON.stringify(item))['所属部门'];
         arr[index] = obj;
       });

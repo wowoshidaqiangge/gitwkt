@@ -5,7 +5,7 @@
             <el-form :model="seachinfo"  ref="seachinfo"  class="demo-ruleForm">
               <el-row type='flex' justify="end">
                 <div style="flex:1">
-                    <el-button type="add" icon='el-icon-circle-plus-outline' @click="add">新增</el-button>
+                    <el-button type="add" icon='el-icon-circle-plus-outline' v-if="$_has('PRODUCTTASKADD')" @click="add">新增</el-button>
                 </div>
                 <el-col :span="5">
                         <el-form-item label="" prop="value1">
@@ -62,34 +62,34 @@
                             <template slot-scope="scope">
                                 <el-button
                                     type="add"
-                                    v-if="scope.row.state==='1' || scope.row.state==='2' ||scope.row.state==='3' || scope.row.state==='4'"
+                                    v-if="(scope.row.state==='1' || scope.row.state==='2' ||scope.row.state==='3' || scope.row.state==='4')&& $_has('PRODUCTTASKLOCK')"
                                     plain
                                     @click="handledlock(scope.row,6)"
                                 >锁定</el-button>
                                 <el-button
                                     type="add"
-                                    v-if="scope.row.state==='6'"
+                                    v-if="scope.row.state==='6' && $_has('PRODUCTTASKUNLOCK')"
                                     plain
                                     @click="handledlock(scope.row,7)"
                                 >解锁</el-button>
                                 <el-button
                                     type="add"
-                                     v-if="scope.row.state==='1' || scope.row.state==='2'"
+                                     v-if="(scope.row.state==='1' || scope.row.state==='2')&& $_has('PRODUCTTASKDELETE')"
                                     plain
                                     @click="handledelete(scope.row)"
                                 >删除</el-button>
                                  <el-button
                                     type="add"
                                     plain
-                                    v-if="scope.row.state==='1' || scope.row.state==='2'"
+                                    v-if="(scope.row.state==='1' || scope.row.state==='2')&& $_has('PRODUCTTASKUPDATE')"
                                     @click="handlededit(scope.row)"
                                 >编辑</el-button>
                                 <el-button
                                     type="danger"
-                                    v-if="scope.row.state==='1' || scope.row.state==='2' ||scope.row.state==='3' || scope.row.state==='4' ||scope.row.state==='5'"
+                                    v-if="(scope.row.state==='1' || scope.row.state==='2' ||scope.row.state==='3' || scope.row.state==='4' ||scope.row.state==='5')&& $_has('PRODUCTTASKDETAIL')"
                                     plain
                                     @click="handledistribute(scope.row)"
-                                >查看</el-button>
+                                >详情</el-button>
                             </template>
                     </el-table-column>
            </el-table>
@@ -116,6 +116,7 @@
 <script>
 import Modal from './modal'
 import Detailsproduct from './detailsProduct'
+import moment from 'moment'
 import {
     produceTaskPage,
     updateProduceTaskLockById,//解锁锁定
@@ -141,7 +142,7 @@ export default {
              options:[
                 {label:"未派单",value:1},
                 {label:"未领单",value:2},
-                {label:"生产中",value:3},
+                {label:"零件生产",value:3},
                 {label:"装配",value:4},
                 {label:"已完工",value:5},
                 {label:"已锁定",value:6}

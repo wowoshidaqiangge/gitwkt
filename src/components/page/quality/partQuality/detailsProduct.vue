@@ -11,7 +11,7 @@
             <div class="infolist">
                 <div class="info" v-for="(item,index) in prolist" :key="index">
                     <p><span>{{item.name}}：</span></p>
-                    <p>{{item.value}}</p>
+                    <p :title="item.value" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{item.value}}</p>
                 </div>
                
             </div>
@@ -29,13 +29,13 @@
                                width="50px"
                         >  
                      </el-table-column>   
-                     <el-table-column
+                     <!-- <el-table-column
                                     prop="taskNumber"
                                     label="生产工单号"
                                     align="center"
                                
                             >  
-                        </el-table-column> 
+                        </el-table-column>  -->
                     <el-table-column label="加工内容" align="center">
                         <el-table-column
                                 prop="workKind"
@@ -141,13 +141,13 @@ export default {
            tablelist:[],
           tableData:[],
             columnlist:[
-                {label:'派工人员',prop:'assignUser',width:"50px"},
+                {label:'派工人员',prop:'createUser',},
                 {label:'派工日期',prop:'createTime'},
                 {label:'设备编号',prop:'deviceNumber'},
-                {label:'工作人员',prop:'createUser'},
+                {label:'工作人员',prop:'assignUser'},
                 {label:'结算方式',prop:'accountType1'},
-                {label:'计时工价',prop:'timePrice',width:"50px"},
-                {label:'计时时间',prop:'manHour',width:"50px"},
+                {label:'计时工价',prop:'timePrice',width:"60px"},
+                {label:'计时时间',prop:'manHour',width:"60px"},
                 {label:'派件数量',prop:'assignCount',width:"50px"},
             ],
             columnlist1:[
@@ -206,7 +206,7 @@ export default {
           let pro = JSON.parse(JSON.stringify(info))
           this.wayinfo = pro
           let arr = [
-              {name:"产品任务单",value:pro.taskNumber},
+              {name:"生产工单号",value:pro.taskNumber},
               {name:"物料编码",value:pro.itemCode},
               {name:"物料名称",value:pro.itemName},
               {name:"规格型号",value:pro.model},
@@ -220,7 +220,7 @@ export default {
               {name:"备注",value:pro.remark},
           ]
           this.prolist = arr
-          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId}).then(res=>{
+          getProcessListByPlanId({...this.page,produceTaskPlanId:pro.produceTaskPlanId,state:pro.state}).then(res=>{
               if(res.code==='0'){
                   handle(res.data.records)
                   this.pagesize = parseInt(res.data.current)

@@ -406,7 +406,6 @@ export default {
        },
        // 给工单添加计划产量
        planblur(){
-          
            this.tableData.map(v=>{
                v.planYield = this.form.planYield
            })
@@ -416,9 +415,7 @@ export default {
                 if(v.type==2){
                     v.partCount = this.form.planYield * v.partCountNum
                 }
-               
            })
-           
        },
        // 根据产品编码查工单
        getPlanListByProductCode(info){

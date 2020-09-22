@@ -65,6 +65,16 @@
                   <el-input v-model="form.deptName" disabled></el-input>
                 </el-form-item>
               </el-col>
+              <el-col :span="11">
+                <el-form-item
+                  label="派件数量"
+                  :label-width="formLabelWidth"
+                  class="formitem formitem1"
+                  prop="assignCount"
+                >
+                  <el-input v-model="form.assignCount" disabled></el-input>
+                </el-form-item>
+              </el-col>
             </div>
 
             <el-col :span="21">
@@ -168,12 +178,17 @@ export default {
       this.passwordInput = '';
       this.booking = true;
       this.bookingSuc = false;
+      this.sureload = false;
+      this.sureloadText = '确 定';
+      this.btnDisabled = false;
     },
     bookSubmit() {
       if (this.icCard === this.input || this.password === this.passwordInput) {
         this.booking = false;
       } else {
         this.$message.error('卡号或密码与登录者不符！');
+        this.input = '';
+        this.passwordInput = '';
       }
     },
     getform(info) {
@@ -195,8 +210,32 @@ export default {
     makesure() {
       this.$refs.form.validate(valid => {
         if (valid) {
-          const { produceTaskId, produceTaskPlanId, deviceId, workprocessId, taskNumber, produceCount } = this.form;
-          const obj = { produceTaskId, produceTaskPlanId, deviceId, workprocessId, taskNumber, produceCount };
+          const {
+            produceTaskId,
+            produceTaskPlanId,
+            deviceId,
+            taskNumber,
+            produceCount,
+            itemId,
+            itemCode,
+            workprocessType,
+            workprocessId,
+            workprocessCode,
+            productType
+          } = this.form;
+          const obj = {
+            produceTaskId,
+            produceTaskPlanId,
+            deviceId,
+            taskNumber,
+            produceCount,
+            itemId,
+            itemCode,
+            workprocessType,
+            workprocessId,
+            workprocessCode,
+            productType
+          };
           this.sureload = true;
           this.sureloadText = '提交中...';
           this.btnDisabled = true;
@@ -267,7 +306,7 @@ export default {
 <style lang="less">
 .bookmodal {
   .modalcont {
-    padding: 25px 0;
+    padding-bottom: 60px;
     border: 1px dashed #aaa;
     margin-bottom: 15px;
     height: 140px;

@@ -120,6 +120,7 @@ export function export_table_to_excel(id) {
 function formatJson(jsonData) {
     console.log(jsonData)
 }
+// 一级表头
 export function export_json_to_excel(th, jsonData, defaultTitle) {
  
     /* original data */
@@ -139,11 +140,88 @@ export function export_json_to_excel(th, jsonData, defaultTitle) {
     var title = defaultTitle || '列表'
     saveAs(new Blob([s2ab(wbout)], {type: "application/octet-stream"}), title + ".xlsx")
 }
+// 二级表头
+export function export_json_to_excel2({
+    multiHeader = [], //一级
+    header,           // 二级
+    data,             // 数据
+    filename,
+    merges = [],
+    autoWidth = true,
+    bookType = 'xlsx'
+  } = {}) {
+   
+    /* original data */
+    filename = filename || 'excel-list'
+    data = [...data]
+    data.unshift(header);
+  
+    for (let i = multiHeader.length - 1; i > -1; i--) {
+      data.unshift(multiHeader[i])
+    }
+  
+    var ws_name = "SheetJS";
+    var wb = new Workbook(),
+      ws = sheet_from_array_of_arrays(data);
+  
+    if (merges.length > 0) {
+      if (!ws['!merges']) ws['!merges'] = [];
+      merges.forEach(item => {
+        ws['!merges'].push(XLSX.utils.decode_range(item))
+      })
+    }
+  
+    if (autoWidth) {
+      /*设置worksheet每列的最大宽度*/
+      const colWidth = data.map(row => row.map(val => {
+        /*先判断是否为null/undefined*/
+        if (val == null) {
+          return {
+            'wch': 10
+          };
+        }
+        /*再判断是否为中文*/
+        else if (val.toString().charCodeAt(0) > 255) {
+          return {
+            'wch': val.toString().length * 2
+          };
+        } else {
+          return {
+            'wch': val.toString().length
+          };
+        }
+      }))
+      /*以第一行为初始值*/
+      let result = colWidth[0];
+      for (let i = 1; i < colWidth.length; i++) {
+        for (let j = 0; j < colWidth[i].length; j++) {
+          if (result[j]['wch'] < colWidth[i][j]['wch']) {
+            result[j]['wch'] = colWidth[i][j]['wch'];
+          }
+        }
+      }
+      ws['!cols'] = result;
+    }
+  
+    /* add worksheet to workbook */
+    wb.SheetNames.push(ws_name);
+    wb.Sheets[ws_name] = ws;
+  
+    var wbout = XLSX.write(wb, {
+      bookType: bookType,
+      bookSST: false,
+      type: 'binary'
+    });
+    saveAs(new Blob([s2ab(wbout)], {
+      type: "application/octet-stream"
+    }), `${filename}.${bookType}`);
+  }
+// 三级表头
 export function export_json_to_excel1({
     multiHeader2 = [],	// 第一行表头
     multiHeader = [], // 第二行表头
     header,	// 第三行表头
-    data,
+    data, 
     filename, //文件名
     merges = [], // 合并
     autoWidth = true,
@@ -193,16 +271,17 @@ export function export_json_to_excel1({
                 };
             }
         }))
+        
         /*以第一行为初始值*/
         let result = colWidth[0];
         for (let v = 1; v < colWidth.length; v++) {
             for (let j = 0; j < colWidth[v].length; j++) {
                 if (result[j]['wch'] < colWidth[v][j]['wch']) {
-                result[j]['wch'] = colWidth[v][j]['wch'];
+                    result[j]['wch'] = colWidth[v][j]['wch'];
                 }
             }
         }
-        ws['!cols'] = result;
+      ws['!cols'] = result;
     }
 
     /* add worksheet to workbook */

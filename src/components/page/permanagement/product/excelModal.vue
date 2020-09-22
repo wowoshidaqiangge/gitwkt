@@ -15,7 +15,7 @@
           <p class="login-tips">
             说明: 导入文件类型必须为excel格式，你可以先点击
             <a
-              href="https://thingcom-test.oss-cn-hangzhou.aliyuncs.com/%E5%A8%81%E8%82%AF%E7%89%B9-%E9%9B%B6%E4%BB%B6-%E6%A8%A1%E6%9D%BF.xlsx"
+              href="https://thingcom-test.oss-cn-hangzhou.aliyuncs.com/%E5%A8%81%E8%82%AF%E7%89%B9-%E4%BA%A7%E5%93%81-%E6%A8%A1%E7%89%88.xlsx"
               >下载模板</a
             >。
           </p>
@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { addPartList } from '@/api/permanagement/material';
+import { addProductList } from '@/api/permanagement/guide';
 
 export default {
   name: 'excelModal',
@@ -65,10 +65,10 @@ export default {
         item.child = {
           partCode: JSON.parse(JSON.stringify(item))['零件编码'],
           partName: JSON.parse(JSON.stringify(item))['零件名称'],
-          partNumber: JSON.parse(JSON.stringify(item))['零件图号'],
-          model: JSON.parse(JSON.stringify(item))['零件规格型号'],
-          partCount: JSON.parse(JSON.stringify(item))['数量'],
-          unit: JSON.parse(JSON.stringify(item))['单位']
+          // partNumber: JSON.parse(JSON.stringify(item))['零件图号'],
+          // model: JSON.parse(JSON.stringify(item))['零件规格型号'],
+          // unit: JSON.parse(JSON.stringify(item))['单位'],
+          partCount: JSON.parse(JSON.stringify(item))['数量']
         };
         // TODO2:用一个子数组对应的唯一标识判断父级的合并单元格
         // 非空则说明是合并单元格的第一个，此后的空值只需要拿到其子数组即可。
@@ -107,15 +107,19 @@ export default {
         obj.model = JSON.parse(JSON.stringify(item))['规格型号'];
         obj.unit = JSON.parse(JSON.stringify(item))['基本单位'];
         obj.deptName = JSON.parse(JSON.stringify(item))['所属部门'];
-        obj.workprocessNames = JSON.parse(JSON.stringify(item))['关联工序'].split('、');
-        obj.partBillList = JSON.parse(JSON.stringify(item))['children'];
+        obj.workprocessCodes = JSON.parse(JSON.stringify(item))
+          ['关联工序(编码)'].split('\n')[0]
+          .split('、');
+        // obj.partBillList = JSON.parse(JSON.stringify(item))['children'];
+        obj.part = JSON.parse(JSON.stringify(item))['children'];
+
         arr[index] = obj;
       });
       this.excelData = arr;
       console.log('excel', this.excelData);
     },
     UpData() {
-      addPartList(this.excelData).then(res => {
+      addProductList(this.excelData).then(res => {
         if (res.code === '0') {
           this.handleUpdate();
           this.$message({

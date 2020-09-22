@@ -62,7 +62,11 @@
               </el-table-column>
               <el-table-column label="发料确认" align="center">
                 <template slot-scope="scope">
-                  <el-button type="primary" v-if="scope.row.partBillState === 0" plain @click="handleSubmit(scope.row)"
+                  <el-button
+                    type="primary"
+                    v-if="$_has('PARTLISTCONFIRM') && scope.row.partBillState == 0"
+                    plain
+                    @click="handleSubmit(scope.row)"
                     >确定</el-button
                   >
                 </template>
@@ -273,7 +277,7 @@
                 <template slot-scope="scope">
                   <el-button
                     type="primary"
-                    v-if="scope.row.rawmaterialBillList[0].state === 0"
+                    v-if="$_has('RAWMATERIALLISTCONFIRM') && scope.row.rawmaterialBillList[0].state == 0"
                     plain
                     @click="handleSubmit3(scope.row)"
                     >确定</el-button
@@ -593,6 +597,7 @@ export default {
     },
     handleClose() {
       this.detailFlag = false;
+      this.getTableData();
     },
     // 发料确认(产品)
     handleSubmit(row) {

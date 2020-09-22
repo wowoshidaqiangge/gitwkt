@@ -4,10 +4,17 @@
       <el-row class="content__top" type="flex" justify="space-around">
         <el-col :span="4">
           <span class="param__label">部门：</span>
-          <el-select v-model="param.deptId" placeholder="请选择部门">
+          <!-- <el-select v-model="param.deptId" placeholder="请选择部门">
             <el-option v-for="item in deptList" :key="item.deptId" :label="item.deptName" :value="item.deptId">
             </el-option>
-          </el-select>
+          </el-select> -->
+          <el-cascader
+            v-model="param.deptId"
+            :options="deptOptions"
+            :props="{ expandTrigger: 'hover' }"
+            placeholder="请选择部门"
+            @change="handleDeptChange"
+          ></el-cascader>
         </el-col>
         <el-col :span="3.5">
           <span class="param__label">姓名：</span>
@@ -31,7 +38,7 @@
         <div class="top__btn">
           <el-button type="add" @click="handleQuery">查询</el-button>
           <el-button type="info" @click="handleReset">重置</el-button>
-          <el-button type="add" @click="handleExcel">EXCEL 导出</el-button>
+          <el-button type="add" v-show="$_has('HISTORYSALARYEXPORT')" @click="exportExcel">EXCEL 导出</el-button>
         </div>
       </el-row>
       <div class="content__box">
@@ -52,7 +59,13 @@
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template slot-scope="scope">
-              <el-button type="add" plain @click="handleDetail(scope.$index, scope.row)">查看详情</el-button>
+              <el-button
+                type="add"
+                plain
+                @click="handleDetail(scope.$index, scope.row)"
+                v-if="$_has('HISTORYSALARYOPERATION') && scope.row.deptName == '线轨'"
+                >查看详情</el-button
+              >
             </template>
           </el-table-column>
         </el-table>
@@ -77,6 +90,7 @@
 import { getProduceDeptList } from '@/api/main'; // 公共api
 import { getHisSalaryPage } from '@/api/salary';
 import { export2Excel } from '@/utils/util.js';
+import moment from 'moment';
 
 export default {
   name: 'hisSalary',
@@ -86,6 +100,7 @@ export default {
   data() {
     return {
       tabIndex: 0,
+      deptId: '',
       param: {
         current: 1,
         size: 10,
@@ -95,6 +110,28 @@ export default {
         startTime: '' // 2020-06
       },
       deptList: [],
+      deptOptions: [
+        { label: '生产一部', value: '7' },
+        {
+          label: '生产二部',
+          value: '8',
+          children: [
+            { label: '线轨', value: '20' },
+            { label: '滑块', value: '19' }
+          ]
+        }
+      ],
+      deptOptions1: [{ label: '生产一部', value: '7' }],
+      deptOptions2: [
+        {
+          label: '生产二部',
+          value: '8',
+          children: [
+            { label: '线轨', value: '20' },
+            { label: '滑块', value: '19' }
+          ]
+        }
+      ],
       loading: false,
       tableData: [],
       columnlist: [
@@ -114,20 +151,45 @@ export default {
     };
   },
   created() {
-    this.getDeptList();
+    this.deptId = sessionStorage.getItem('deptId');
+    // this.getDeptList();
     this.init();
   },
   methods: {
     init() {
-      this.param.startTime = this.getCurTime();
-      // this.param.deptId = 1;
-      this.getTableData();
+      this.param = {
+        current: 1,
+        size: 10,
+        name: '',
+        officeNo: '',
+        startTime: moment(new Date()).format('YYYY-MM')
+      };
+      if (this.deptId == 7) {
+        this.deptOptions = this.deptOptions1;
+        this.param.deptId = '7';
+      } else if (this.deptId == 8) {
+        this.deptOptions = this.deptOptions2;
+        this.param.deptId = '20';
+      } else if (this.deptId == 19 || this.deptId == 20) {
+        this.deptOptions = this.deptOptions2;
+        this.param.deptId = this.deptId;
+      } else {
+        this.param.deptId = '7';
+        this.deptOptions = this.deptOptions;
+      }
+      this.$forceUpdate();
+      this.tableData.length = 0;
+      this.handleQuery();
     },
     getDeptList() {
       getProduceDeptList().then(res => {
         res = res.data;
         this.deptList = res;
       });
+    },
+    handleDeptChange(val) {
+      this.param.deptId = this.param.deptId[this.param.deptId.length - 1];
+      this.handleQuery();
     },
     // 获取表格数据
     getTableData() {
@@ -153,10 +215,14 @@ export default {
           }
           this.loading = false;
         })
-        .catch(error => {});
+        .catch(error => {
+          this.loading = false;
+          debugger;
+        });
     },
     // 条件查询
     handleQuery() {
+      this.param.current = 1;
       this.getTableData();
     },
     // 分页导航
@@ -166,16 +232,29 @@ export default {
     },
     //重置
     handleReset() {
-      this.param.startTime = this.getCurTime();
-      this.param.deptId = '';
-      this.param.name = '';
-      this.param.officeNo = '';
-      this.getTableData();
+      this.init();
     },
     // Excel
-    handleExcel() {
-      const suffix = this.param.startTime || this.getCurTime();
-      export2Excel(this.columnlist, this.tableData, `历史工资-${suffix}`);
+    async exportExcel() {
+      const { deptId, name, officeNo, startTime } = this.param;
+      const obj = { current: 1, size: 10000, deptId, name, officeNo, startTime };
+      let tableData = [];
+      await getHisSalaryPage(obj).then(res => {
+        tableData = res.data.records;
+      });
+      //TODO: 导出的部门后缀
+      let suffix = '';
+      if (this.param.deptId == 7) {
+        suffix = '生产一部';
+      } else if (this.param.deptId == 19) {
+        suffix = '生产二部-滑块';
+      } else if (this.param.deptId == 20) {
+        suffix = '生产二部-线轨';
+      } else {
+        suffix = '';
+      }
+      suffix = `${suffix}-${this.param.startTime}`;
+      export2Excel(this.columnlist, tableData, `历史工资-${suffix}`);
       this.$message.success('导出成功');
     },
     getCurTime() {

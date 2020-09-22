@@ -245,3 +245,6 @@ body .el-table colgroup.gutter {
   border-color: #409baf;
   color: #fff;
 } */
+.hasLink {
+  cursor: pointer;
+}

@@ -75,53 +75,53 @@
                 </el-col>
                  <el-col :span="8">
                             <el-form-item label="工废" :label-width="formLabelWidth" prop='industrialWaste'>
-                                    <el-input v-model="form.industrialWaste" ></el-input>
+                                    <el-input v-model="form.industrialWaste"  @keyup.native="changeAmount('industrialWaste')"></el-input>
                             </el-form-item>
                  </el-col>
                   
                  <el-col :span="8">
                             <el-form-item label="料废" :label-width="formLabelWidth" prop='scrapWaste'>
-                                    <el-input v-model="form.scrapWaste" ></el-input>
+                                    <el-input v-model="form.scrapWaste" @keyup.native="changeAmount('scrapWaste')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="让步工H" :label-width="formLabelWidth" prop='concessionWork'>
-                                    <el-input v-model="form.concessionWork"></el-input>
+                                    <el-input v-model="form.concessionWork" @keyup.native="changeAmount('concessionWork')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="降级工C" :label-width="formLabelWidth" prop='relegationWork'>
-                                    <el-input v-model="form.relegationWork"></el-input>
+                                    <el-input v-model="form.relegationWork" @keyup.native="changeAmount('relegationWork')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="让步料H" :label-width="formLabelWidth" prop='concessionMaterial'>
-                                    <el-input v-model="form.concessionMaterial" ></el-input>
+                                    <el-input v-model="form.concessionMaterial" @keyup.native="changeAmount('concessionMaterial')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="降级料C" :label-width="formLabelWidth" prop='relegationMaterial'>
-                                    <el-input v-model="form.relegationMaterial" ></el-input>
+                                    <el-input v-model="form.relegationMaterial" @keyup.native="changeAmount('relegationMaterial')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="合格P" :label-width="formLabelWidth" prop='qualified'>
-                                    <el-input v-model="form.qualified" @blur="blurinput"></el-input>
+                                    <el-input v-model="form.qualified" @blur="blurinput" @keyup.native="changeAmount('qualified')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="补(扣)" :label-width="formLabelWidth" prop='supplement'>
-                                    <el-input v-model="form.supplement" ></el-input>
+                                    <el-input v-model="form.supplement" @keyup.native="changeAmount1('supplement')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="CPK值" :label-width="formLabelWidth" prop='cpkValue'>
-                                    <el-input v-model="form.cpkValue" ></el-input>
+                                    <el-input v-model="form.cpkValue" @keyup.native="changeAmount('cpkValue')"></el-input>
                             </el-form-item>
                  </el-col>
                   <el-col :span="8">
                             <el-form-item label="计时时间" :label-width="formLabelWidth" prop='manHour '>
-                                    <el-input v-model="form.manHour " style="width:75%"></el-input>&nbsp; / 小时
+                                    <el-input v-model="form.manHour " style="width:75%" @keyup.native="changeAmount('manHour')"></el-input>&nbsp; / 小时
                             </el-form-item>
                  </el-col>
                  <div v-if="!isproduct">
@@ -208,6 +208,23 @@ export default {
     
     },
     methods: {
+      changeAmount(info){
+            let a = this.form[info].replace(/[^\d.]/g,'').split('.')
+            if(a.length>2){
+              this.$message.error('数据格式有误')
+             
+            }
+            this.form[info] = this.form[info].replace(/[^\d.]/g,'')
+        },
+        changeAmount1(info){
+            let a = this.form[info].replace(/[^\d.-]/g,'').split('.')
+            if(a.length>2){
+              this.$message.error('数据格式有误')
+             
+            }
+            this.form[info] = this.form[info].replace(/[^\d.-]/g,'')
+  
+        },
         enterinfo(info,type,way,overtype){
       
             let pro = JSON.parse(JSON.stringify(info))
@@ -225,6 +242,10 @@ export default {
             delete obj.remark
             if (obj.workprocesscheckBillUrl&&obj.workprocesscheckBillName) {
               this.fileList.push({ name: obj.workprocesscheckBillName, url: obj.workprocesscheckBillUrl });
+            }
+             delete obj.createTime
+            if(obj.finishTime){
+              delete obj.finishTime
             }
             this.form= obj
       },

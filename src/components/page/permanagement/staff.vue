@@ -105,6 +105,7 @@ export default {
       columnlist: [
         { prop: 'index', label: '序号' },
         { prop: 'name', label: '员工姓名' },
+        { prop: 'officeNo', label: '工号' },
         { prop: 'phone', label: '手机号' },
         { prop: 'deptName', label: '部门' },
         { prop: 'roleName', label: '角色' },
@@ -164,7 +165,7 @@ export default {
     handleEdit(h, m) {
       this.tit = '编辑员工'
       this.isedit = true
-      this.$refs.staffmodal.getauthputUserid({ id: m.id })
+      this.$refs.staffmodal.getauthputUserid({ id: m.id})
       this.dialogFormVisible = true
     },
     // 添加树状图icon

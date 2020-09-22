@@ -54,7 +54,7 @@ export default {
   },
   data() {
     return {
-      unitOptions: ['个', '件', '只', '条', '台'],
+      unitOptions: ['个', '只', '件', '条', '支', '面', '台'],
       deptOptions: [],
       rules: {
         partCode: [

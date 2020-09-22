@@ -19,7 +19,7 @@
                     </el-col>
                     <el-col :span="3" style="margin:0 20px">
                         <el-form-item label="" prop='toType'  >
-                                <el-select v-model="terms.toType"   @change='changeselcet' placeholder="选择设备类型" style="width:100%">
+                                <el-select v-if="roleId==1||roleId==0" v-model="terms.toType"   @change='changeselcet' placeholder="选择部门" style="width:100%">
                                     <el-option v-for="item in deviceList" :label="item.enumValue" :key='item.enumKey' :value="item.enumKey"></el-option>
                                 </el-select>
                             </el-form-item>
@@ -143,6 +143,7 @@ export default {
     name: 'devicerepair',
     data() {
         return {
+            roleId: '',
             tableData:[],
             columnlist:[],
             deviceList:[],
@@ -180,6 +181,11 @@ export default {
         }
     },
     created(){
+        this.roleId = sessionStorage.getItem('roleId')
+        if(this.roleId==1||this.roleId==0){
+          this.terms.toType='1'
+        }
+        console.log(this.toType)
         this.getselectDeviceRepairData()
         this.getdeviceTypeList()
         this.getselectDeviceRepairList()

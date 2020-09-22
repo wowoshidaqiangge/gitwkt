@@ -3,8 +3,7 @@
     <div class="top">
       <el-row type="flex" justify="start">
         <el-col :span="3">
-          <el-date-picker v-model="year" type="year" placeholder="选择年份" class="box" value-format="yyyy"
-            @change="getTableData()">
+          <el-date-picker v-model="year" type="year" placeholder="选择年份" class="box" value-format="yyyy" @change="getTableData()">
           </el-date-picker>
         </el-col>
         <el-col :span="1.5" style="margin:0 20px;">
@@ -13,12 +12,14 @@
         <el-col :span="1.5">
           <el-button @click="nextYear">下一年<i class="el-icon-arrow-right el-icon--right"></i></el-button>
         </el-col>
+        <div style="flex:1">
+          <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+        </div>
       </el-row>
     </div>
     <div class="middle">
       <el-table :data="tableData" border style="width: 100%">
-        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label"
-          align="center"></el-table-column>
+        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label" align="center"></el-table-column>
       </el-table>
     </div>
     <div class="bottom">
@@ -29,6 +30,7 @@
 </template>
 <script>
 import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { processCount } from 'api/tool'
@@ -63,6 +65,13 @@ export default {
 
   },
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.tableData, `工序统计-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     preYear() {
       this.year = (parseInt(this.year) - 1).toString();
       this.getTableData()
@@ -148,6 +157,7 @@ export default {
           yarr2.push(item.qualifyRate.split('%')[0])
         }
       })
+      let max = (Math.max(...yarr1) * 1.2).toFixed(0)
       let chartTitle = this.year + '年工序合格率'
       let option = {
         title: {
@@ -157,6 +167,19 @@ export default {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: function (data) {
+            let target;
+            let res = `${data[0].name}</br>`
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].seriesName == '月度工序') {
+                target = data[i].value
+              } else if (data[i].seriesName == '工序合格率') {
+                target = data[i].value + '%'
+              }
+              res += `${data[i].marker} ${data[i].seriesName}：${target}</br>`
+            }
+            return res;
+          },
           axisPointer: {
             type: 'cross',
             crossStyle: {
@@ -168,7 +191,6 @@ export default {
         legend: {
           show: true,
           bottom: '5%',
-          // data: ['月度生产', '成品同比']
         },
         xAxis: [
           {
@@ -183,6 +205,7 @@ export default {
           {
             type: 'value',
             name: '',
+            max:max,
             // interval: 10000,
           },
           {

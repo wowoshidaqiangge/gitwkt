@@ -3,11 +3,11 @@ import { Message } from 'element-ui';
 const service = axios.create({
   // process.env.NODE_ENV === 'development' 来判断是否开发环境
 
-  baseURL: 'http://124.70.220.117:7050', //请求路径
+  // baseURL: 'http://124.70.220.117:7050', //请求路径
   // baseURL: 'http://192.168.110.24:7054',
   // baseURL: 'http://zh.thingcom.com',
-  // baseURL:  'http://139.9.7.204.61:7002',
-  // baseURL: 'http://172.16.1.100:7001', //请求路径
+  baseURL:  'http://116.62.153.134:7050',
+  // baseURL: 'http://112.16.67.72:8005', //请求路径
   timeout: 10000
 });
 

@@ -5,7 +5,7 @@
             <el-form :model="seachinfo"  ref="seachinfo"  class="demo-ruleForm">
               <el-row type='flex' justify="end">
                 <div style="flex:1">
-                    <el-button type="add" icon='el-icon-circle-plus-outline' @click="add">新增</el-button>
+                    <el-button type="add" icon='el-icon-circle-plus-outline' v-if="$_has('PARTTASKADD')" @click="add">新增</el-button>
                 </div>
                <el-col :span="5">
                         <el-form-item label="" prop="value1">
@@ -63,7 +63,7 @@
                             <template slot-scope="scope">
                                 <el-button
                                     type="danger"
-                                    v-if="scope.row.state!=6"
+                                    v-if="scope.row.state!=6 && $_has('PARTTASKDETAIL')"
                                     plain
                                     class="red"
                                     @click="handledistribute(scope.row)"
@@ -74,26 +74,26 @@
                             <template slot-scope="scope">
                                 <el-button
                                     type="add"
-                                    v-if="scope.row.state==6"
+                                    v-if="scope.row.state==6 && $_has('PARTTASKUNLOCK')"
                                     plain
                                     @click="handledlock(scope.row,7)"
                                 >解锁</el-button>
                                 <el-button
                                     type="add"
-                                    v-if="scope.row.state!=6&&scope.row.state!=5"
+                                    v-if="scope.row.state!=6&&scope.row.state!=5 && $_has('PARTTASKLOCK')"
                                     plain
                                     @click="handledlock(scope.row,6)"
                                 >锁定</el-button>
                                 <el-button
                                     type="add"
-                                    v-if="scope.row.state==1||scope.row.state==2"
+                                    v-if="(scope.row.state==1||scope.row.state==2) && $_has('PARTTASKUPDATE')"
                                     plain
                                     @click="handlededit(scope.row)"
                                 >编辑</el-button>
                                 <el-button
                                     type="add"
                                     plain
-                                     v-if="scope.row.state==1||scope.row.state==2"
+                                     v-if="(scope.row.state==1||scope.row.state==2)&& $_has('PARTTASKDELETE')"
                                     @click="handledDelete(scope.row)"
                                 >删除</el-button>
                             </template>
@@ -118,6 +118,7 @@
 <script>
 import Modal from './modal'
 import DetailsPartmodal from './detailsPartModal'
+import moment from 'moment'
 import {
     partTaskPage,
     updatePartTaskLockById,//解锁 锁定
@@ -146,7 +147,7 @@ export default {
                 {label:"未派单",value:1},
                 {label:"未领单",value:2},
                 {label:"生产中",value:3},
-                {label:"装配",value:4},
+                // {label:"装配",value:4},
                 {label:"已完工",value:5},
                 {label:"已锁定",value:6}
             ],

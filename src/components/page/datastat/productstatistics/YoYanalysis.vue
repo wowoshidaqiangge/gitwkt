@@ -4,7 +4,7 @@
       <el-row type="flex" justify="start">
         <el-col :span="3">
           <el-date-picker v-model="startYear" type="year" placeholder="选择年份" class="box" value-format="yyyy"
-            @change="getTableData()">
+            @change="getYoYTableData()">
           </el-date-picker>
         </el-col>
         <el-col :span="1.5" style="margin:0 20px;">
@@ -13,6 +13,9 @@
         <el-col :span="1.5">
           <el-button @click="nextYear">下一年<i class="el-icon-arrow-right el-icon--right"></i></el-button>
         </el-col>
+        <div style="flex:1">
+          <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+        </div>
       </el-row>
     </div>
     <div class="middle">
@@ -62,6 +65,7 @@ import moment from 'moment';
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { analysis } from 'api/tool'
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'productStatistics',
   components: {
@@ -93,13 +97,19 @@ export default {
   watch: {},
   mounted() {
     this.nowmonth = parseFloat(moment(new Date()).format("MM"))
-
   },
   created() {
     this.startYear = moment(new Date()).locale('zh-cn').format('YYYY');
     this.getYoYTableData();
   },
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.YoYtableData, `同比分析-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     // 上一年、下一年按钮
     preYear() {
       this.startYear = (parseInt(this.startYear) - 1).toString();
@@ -135,9 +145,9 @@ export default {
         this.tableList1.push(item.mouth + '月')
         this.tableList2.push(item.thisCount)
         if (item.rate) {
-          this.tableList3.push(item.rate + '%')
+          this.tableList3.push((item.rate*100).toFixed(2) + '%')
         } else {
-          this.tableList3.push(0 + '%')
+          this.tableList3.push('')
         }
       })
       // this.tableList1 = ['1月', '1月', '1月', '1月', '1月', '1月', '1月', '1月', '1月', '1月', '1月', '1月',]
@@ -168,16 +178,16 @@ export default {
             this.chartData = res.data
 
             res.data.map((item, index) => {
-              if (item.mouth) {            //志杰重新定义月份的英语
+              if (item.mouth) {            //重新定义月份的英语
                 if (this.YoYtableData[item.mouth - 1].month.indexOf(item.mouth) != -1) {
                   if (item.preCount) {
                     this.YoYtableData[item.mouth - 1].preCount = item.preCount
                   }
-                  else if (item.thisCount) {
+                  if (item.thisCount) {
                     this.YoYtableData[item.mouth - 1].thisCount = item.thisCount
                   }
                   if (Number(item.rate)) {
-                    this.YoYtableData[item.mouth - 1].rate = item.rate * 100
+                    this.YoYtableData[item.mouth - 1].rate = (item.rate * 100).toFixed(2)
                   }
                 }
               }
@@ -229,7 +239,7 @@ export default {
         item.mouth += '月'
         xarr.push(item.mouth)
         yarr1.push(item.thisCount)
-        yarr2.push(item.rate)
+        yarr2.push(item.rate?(item.rate*100).toFixed(2):'--')
       })
       let chartTitle = this.startYear + '年成品月度生产情况'
       let option = {
@@ -240,6 +250,23 @@ export default {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: function (data) {
+            let target;
+            let res = `${data[0].name}</br>`
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].seriesName == '月度生产') {
+                target = data[i].value
+              } else if (data[i].seriesName == '成品同比') {
+                if(data[i].value!='--'){
+                  target = data[i].value + '%'
+                }else{
+                  target = data[i].value
+                }
+              }
+              res += `${data[i].marker} ${data[i].seriesName}：${target}</br>`
+            }
+            return res;
+          },
           axisPointer: {
             type: 'cross',
             crossStyle: {
@@ -305,7 +332,7 @@ export default {
     },
     //处理季度数据
     getquartval(val) {
-      let res = ''
+      let res = 0
       this.chartData.map((item) => {
         if (Math.ceil(item.mouth.split('月')[0] / 3) === val) {
           res = res + item.thisCount

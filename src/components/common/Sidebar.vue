@@ -18,11 +18,7 @@
               <span slot="title">{{ item.label }}</span>
             </template>
             <template v-for="subItem in item.children">
-              <el-submenu
-                v-if="subItem.children"
-                :index="subItem.obj.index"
-                :key="subItem.obj.index"
-              >
+              <el-submenu v-if="subItem.children" :index="subItem.obj.index" :key="subItem.obj.index">
                 <template slot="title">{{ subItem.label }}</template>
                 <el-menu-item
                   v-for="threeItem in subItem.children"
@@ -31,12 +27,9 @@
                   >{{ threeItem.label }}</el-menu-item
                 >
               </el-submenu>
-              <el-menu-item
-                v-else
-                :index="subItem.obj.index"
-                :key="subItem.obj.index"
-                >{{ subItem.label }}</el-menu-item
-              >
+              <el-menu-item v-else :index="subItem.obj.index" :key="subItem.obj.index">{{
+                subItem.label
+              }}</el-menu-item>
             </template>
           </el-submenu>
         </template>
@@ -201,15 +194,36 @@ export default {
               arr.push({ id: h.id, name: h.label });
             }
           });
-          this.items.unshift({
-            icon: 'el-icon-lx-home',
-            index: 'dashboard',
-            label: '系统首页',
-            obj: {
-              icon: 'el-icon-lx-home',
-              index: 'dashboard'
-            }
-          });
+          // TODO: 删除
+          // this.items.unshift(
+          //   {
+          //     icon: 'el-icon-lx-home',
+          //     index: 'dashboard',
+          //     label: '系统首页',
+          //     obj: {
+          //       icon: 'el-icon-lx-home',
+          //       index: 'dashboard'
+          //     }
+          //   },
+          //   {
+          //     icon: 'el-icon-lx-home',
+          //     index: 'globalPage',
+          //     label: '大屏一(待删除)',
+          //     obj: {
+          //       icon: 'el-icon-lx-home',
+          //       index: 'globalPage'
+          //     }
+          //   },
+          //   {
+          //     icon: 'el-icon-lx-home',
+          //     index: 'globalPage2',
+          //     label: '大屏二(待删除)',
+          //     obj: {
+          //       icon: 'el-icon-lx-home',
+          //       index: 'globalPage2'
+          //     }
+          //   }
+          // );
           // 设置人员设置中角色权限
           sessionStorage.setItem('checkbox', JSON.stringify(arr));
         }

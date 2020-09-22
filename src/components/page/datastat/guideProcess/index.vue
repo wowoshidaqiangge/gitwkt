@@ -1,16 +1,17 @@
 <template>
   <div class="production">
     <el-row type="flex" justify="start" class="pageheader">
-      <el-col :span="3" class="pageheader_item">
-        <el-date-picker style="width:100%" placeholder="请选择日期"  v-model="searchInfo.dateTime"  type="date" value-format="yyyy-MM-dd">
+      <el-col :span="4" class="pageheader_item">
+      
+        <el-date-picker style="width:100%"  v-model="dateTime" type="daterange" range-separator="——" start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd">
         </el-date-picker>
       </el-col>
       <el-col :span="3" class="pageheader_item">
-        <el-input style="width:100%" v-model="searchInfo.beginProductCode" placeholder="起始产品编码" >
+        <el-input style="width:100%" v-model="searchInfo.beginProductCode" placeholder="起始产品编码">
         </el-input>
       </el-col>
       <el-col :span="3" class="pageheader_item">
-        <el-input style="width:100%" v-model="searchInfo.endProductCode"  placeholder="结束产品编码">
+        <el-input style="width:100%" v-model="searchInfo.endProductCode" placeholder="结束产品编码">
         </el-input>
       </el-col>
       <div class="pageheader_item">
@@ -19,7 +20,7 @@
       </div>
       <div style="flex:1">
         <div style="float:right;">
-          <el-button type="add">EXCEL导出</el-button>
+          <el-button type="add" @click="handleExcel">EXCEL导出</el-button>
         </div>
       </div>
     </el-row>
@@ -34,49 +35,10 @@
                 background: '#f0f9eb !important',
                 color: '#666'
               }">
-              <!-- <el-table-column type="expand">
-                <template slot-scope="props2">
-                  <el-table :data="props2.row.reportList" stripe border lazy :header-cell-style="{
-                      background: '#f0f9eb !important',
-                      color: '#888'
-                    }">
-                    <el-table-column v-for="(item, index) in columnlist2" :key="index" :width="item.width"
-                      :prop="item.prop" :label="item.label" align="center"></el-table-column>
-                  </el-table>
-                  <br />
-                  <el-table :data="props2.row.qualityList" stripe border lazy :header-cell-style="{
-                      background: '#f0f9eb !important',
-                      color: '#888'
-                    }">
-                    <el-table-column v-for="(item, index) in columnlist2" :key="index" :width="item.width"
-                      :prop="item.prop" :label="item.label" align="center"></el-table-column>
-                  </el-table>
-                </template>
-              </el-table-column> -->
+             
               <el-table-column v-for="(item, index) in columnlist3" :key="index" :prop="item.prop" :label="item.label"
                 align="center"></el-table-column>
-              <!-- <el-table-column prop="produceDuration" label="生产用时" align="center" width="100">
-                <template slot-scope="scope">
-                  <span>{{
-                      scope.row.produceDuration
-                        ? scope.row.produceDuration + ' day'
-                        : ''
-                    }}
-                  </span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="produceTaskPlanState" label="状态" width="130" align="center">
-                <template slot-scope="scope">
-                  <span v-if="scope.row.state === 1">{{
-                    scope.row.produceTaskPlanState
-                  }}</span>
-                  <span style="color:#E6A23C" v-if="scope.row.state === 2">{{ scope.row.produceTaskPlanState }}</span>
-                  <span style="color:#409EFF" v-if="scope.row.state === 3">{{ scope.row.produceTaskPlanState }}</span>
-                  <span style="color:#67C23A" v-if="scope.row.state === 4">{{ scope.row.produceTaskPlanState }}</span>
-                  <span style="color:#F56C6C" v-if="scope.row.state === 5">{{ scope.row.produceTaskPlanState }}</span>
-                  <span style="color:#909399" v-if="scope.row.state === 6">{{ scope.row.produceTaskPlanState }}</span>
-                </template>
-              </el-table-column> -->
+            
             </el-table>
           </template>
         </el-table-column>
@@ -91,28 +53,7 @@
         <el-table-column v-for="item in columnlist1.slice(5,7)" :key="item.id" :prop="item.prop" :label="item.label"
           align="center">
         </el-table-column>
-        <!-- <el-table-column prop="produceDuration" label="生产用时" align="center" width="120">
-          <template slot-scope="scope">
-            <span>{{
-                scope.row.produceDuration
-                  ? scope.row.produceDuration + ' day'
-                  : ''
-              }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="produceTaskState" label="状态" width="100" align="center">
-          <template slot-scope="scope">
-            <span v-if="scope.row.state === 1">{{
-              scope.row.produceTaskState
-            }}</span>
-            <span style="color:#E6A23C" v-if="scope.row.state === 2">{{ scope.row.produceTaskState }}</span>
-            <span style="color:#409EFF" v-if="scope.row.state === 3">{{ scope.row.produceTaskState }}</span>
-            <span style="color:#67C23A" v-if="scope.row.state === 4">{{ scope.row.produceTaskState }}</span>
-            <span style="color:#F56C6C" v-if="scope.row.state === 5">{{ scope.row.produceTaskState }}</span>
-            <span style="color:#909399" v-if="scope.row.state === 6">{{ scope.row.produceTaskState }}</span>
-          </template>
-        </el-table-column> -->
+      
       </el-table>
       <div class="page">
         <el-pagination :background='true' :current-page.sync="pagesize" @current-change="handleCurrentChange"
@@ -125,7 +66,7 @@
 
 <script>
 import { getProduceRetrospect } from 'api/tool';
-
+import { export2Excel2, } from '@/utils/util.js';
 import moment from 'moment';
 import { mapState } from 'vuex';
 export default {
@@ -144,26 +85,24 @@ export default {
   },
   data() {
     return {
+      dateTime:[],
       searchInfo: {
-        dateTime: '',
+        beginTime: '',
+        endTime: '',
         beginProductCode: '',
         endProductCode: ''
       },
       pagesize: 1,
       totals: 0,
       orderlist: [],
-      dateValue: '',
-      searchinfo: {
-        productCode: '',
-        beginTime: '',
-        endTime: '',
-      },
+      // dateValue: moment(new Date()).format("YYYY-MM"),
       page: {
         current: 1,
         size: 10
       },
       loading: false,
       tableData: [],
+      excelData: [],  //导出excel表格用的tableData
       columnlist1: [
         { prop: 'productCode', label: '产品编码', id: '1' },
         { prop: 'createTime', label: '日期', id: '2' },
@@ -196,8 +135,53 @@ export default {
 
   created() {
     this.init();
+    this.dateTime[0] = `${moment(new Date()).format('YYYY')}-1-1`
+    this.dateTime[1] = moment(new Date()).format('YYYY-MM-DD')
   },
   methods: {
+    // 导出EXCEL表格
+    handleExcel: async function () {
+      await this.getExcelData()
+      const multiHeader = [['产品编码', "日期", "等级", "轨高", "轨宽", "组合", "", "", "", "", "检查员", "备注"]]
+      const header = ["", "", "", "", "", "头", "中1", "中2", "中3", "尾", "", ""]
+      const filterVal = ['productCode', 'createTime', 'rank', 'guideHeight', 'guideWidth',
+        'combinationHeader', 'combinationCentreOne', 'combinationCentreTwo', 'combinationCentreThree', 'combinationFoot', 'checkExamUserOut', 'remark']
+      const data = this.excelData
+      console.log(data)
+      const merges = ['A1:A2', 'B1:B2', 'C1:C2', 'D1:D2', 'E1:E2', 'F1:J1', 'K1:K2', 'L1:L2']
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel2(header, data, `线轨生产追溯${time}`, filterVal, multiHeader, merges)
+      // .then(() => {
+      //   this.$message.success('导出成功');
+      // })
+    },
+    getExcelData: async function () {
+      if(this.dateTime){
+        this.searchInfo.beginTime=this.dateTime[0],
+        this.searchInfo.endTime=this.dateTime[1]
+      }
+      let obj = { ...this.searchInfo, current: 1, size: 9999 }
+      await getProduceRetrospect(obj).then(res => {
+        if (res.code === '0') {
+          res.data.records.map((item, index) => {
+            if (item.checkExamUserOut) {
+              item.checkExamUserOut = item.checkExamUserOut.split('"')[1]
+            }
+            if (item.processList) {
+              item.processList.map((v) => {
+                if (v.checkExamUserIn) {
+                  v.checkExamUserIn = v.checkExamUserIn.split('"')[1]
+                }
+                if (v.operator) {
+                  v.operator = v.operator.split('"')[1]
+                }
+              })
+            }
+          })
+          this.excelData = res.data.records;
+        }
+      });
+    },
     init() {
       // this.getproduceTaskStateList();
       this.getProduceRetrospectData();
@@ -213,6 +197,10 @@ export default {
     // API:获取数据
     getProduceRetrospectData() {
       // this.loading = true;
+      if(this.dateTime){
+        this.searchInfo.beginTime=this.dateTime[0],
+        this.searchInfo.endTime=this.dateTime[1]
+      }
       let obj = { ...this.page, ...this.searchInfo }
       getProduceRetrospect(obj).then(res => {
         if (res.code === '0') {
@@ -338,21 +326,18 @@ export default {
     // },
     //搜索
     handleSearch() {
+      this.page.current=1
       this.getProduceRetrospectData();
     },
     //重置
     handleReset() {
-      this.searchInfo= {
-        dateTime: '',
+      this.searchInfo = {
+        beginTime: '',
+        endTime: '',
         beginProductCode: '',
         endProductCode: ''
       },
-      this.searchInfo={
-        productCode: '',
-        beginTime: '',
-        endTime: '',
-      }
-      this.dateValue = '';
+      this.dateTime=[],
       this.getProduceRetrospectData();
     },
     //分页

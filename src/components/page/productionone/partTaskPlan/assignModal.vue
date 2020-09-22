@@ -313,7 +313,13 @@ export default {
         ]
       }
       this.form = { ...m, ...produceTask };
+      if (!this.form.accountType) {
+        this.form.accountType = 1
+      }
+      this.num = 2
+      this.handleChange(2)
       this.form.userId = m.assignUserId   // 获取用户默认展示ID
+      // debugger
       // console.log(typeof (this.form.deviceId))
       this.getTableData()
     },
@@ -365,8 +371,8 @@ export default {
             });
           } else if (this.tit === '修改') {
             if (Array.isArray(this.form.userId)) {
-              this.form.deptId = this.form.userId[0];
-              this.form.userId = this.form.userId[1];
+              this.form.deptId = this.form.userId[this.form.userId.length - 2];
+              this.form.userId = this.form.userId[this.form.userId.length - 1];
             }
             if (Array.isArray(this.form.deviceId)) {
               this.form.deviceId = this.form.deviceId[1]
@@ -385,8 +391,8 @@ export default {
             }).catch(() => { });
           } else if (this.tit === '派单' || this.tit === '重新派单') {
             if (Array.isArray(this.form.userId)) {
-              this.form.deptId = this.form.userId[0];
-              this.form.userId = this.form.userId[1];
+              this.form.deptId = this.form.userId[this.form.userId.length - 2];
+              this.form.userId = this.form.userId[this.form.userId.length - 1];
             }
             if (Array.isArray(this.form.deviceId)) {
               this.form.deviceId = this.form.deviceId[1]
@@ -396,7 +402,12 @@ export default {
             }
             this.form.produceTaskPlanId = this.form.id //要求produceTaskPlanId的value值为派单详情列表的id
             delete this.form.id
-            let obj = { ...this.form, type: '1', operateType: '2' } // type=1为零件工单；operateType=2为派单、重新派单
+            let obj={}
+            if(this.tit === '派单'){
+              obj = { ...this.form, type: '1', operateType: '2' } // type=3为产品工单；operateType=2为派单
+            }else if(this.tit === '重新派单'){
+              obj = { ...this.form, type: '1', operateType: '3' } // type=3为产品工单；operateType=2为重新派单
+            }
             produceTaskAssign(obj).then(res => {
               if (res.code === '0') {
                 this.$message.success(res.msg);

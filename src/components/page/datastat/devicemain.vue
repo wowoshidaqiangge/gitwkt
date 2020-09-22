@@ -18,14 +18,14 @@
                     </el-col>
                     <el-col :span="3" style="margin:0 20px">
                         <el-form-item label="" prop='toType'>
-                                <el-select v-model="terms.toType"   @change='changesel' placeholder="选择设备类型" style="width:100%">
+                                <el-select v-model="terms.toType"   @change='changesel' placeholder="选择部门" style="width:100%">
                                     <el-option v-for="item in deviceList" :label="item.enumValue" :key='item.enumKey' :value="item.enumKey"></el-option>
                                 </el-select>
                             </el-form-item>
                     </el-col>
                     <el-col :span="4" style="margin-right:10px">
                         <el-form-item label="" prop='deviceId'>
-                            <el-select v-model="terms.deviceId"  clearable filterable placeholder="选择设备">
+                            <el-select v-if="roleId==1||roleId==0" v-model="terms.deviceId"  clearable filterable placeholder="选择设备">
                                     <el-option v-for="item in stateArr" :label="item.deviceName" :key='item.deviceId' :value="item.deviceId"></el-option>
                                 </el-select>
                             </el-form-item>
@@ -140,6 +140,7 @@ export default {
     name: 'devicemain',
     data() {
         return {
+            roleId: '',
             tableData:[],
             columnlist:[],
             deviceList:[],
@@ -183,6 +184,10 @@ export default {
      
     },
     created(){
+        this.roleId = sessionStorage.getItem('roleId')
+        if(this.roleId==1||this.roleId==0){
+          this.terms.toType='1'
+        }
         this.getselectDeviceMaintainData()
         this.getdeviceTypeList()
         this.getselectDeviceMaintainList()

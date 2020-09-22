@@ -10,12 +10,13 @@
         <div class="detailinfo">
             <div style="margin-bottom:15px">
                 <div style="padding:0 0 10px 20px;font-weight:600;font-size:15px">产品任务基本信息
-                    <span style="float:right"><el-button type="add" @click="handleExcel">EXCEL导出</el-button></span>
+                    <span style="float:right" v-if="isdaogui"><el-button type="add" @click="handleExcel1" >EXCEL导出</el-button></span>
+                    <span style="float:right" v-if="!isdaogui"><el-button type="add" @click="handleExcel">EXCEL导出</el-button></span>
                 </div>
                 <div class="infolist">
                     <div class="info" v-for="(item,index) in prolist" :key="index">
                         <p><span>{{item.name}}:</span></p>
-                        <p>{{item.value}}</p>
+                        <p :title="item.value" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{item.value}}</p>
                     </div>
                     <div class="info">
                         <p><span>质检记录:</span></p>
@@ -151,6 +152,7 @@
                         </el-table-column> 
                         <el-table-column label="质量检验结果(件)" align="center">
                             <el-table-column
+                            show-overflow-tooltip
                                 v-for="(item,index) in columnlist4"
                                 :key="index+50"
                                 :width="item.width"
@@ -242,7 +244,7 @@ export default {
             formLabelWidth:'80px',
             columnlist:[
                 {label:'派工人员',prop:'createUser',width:"70px"},
-                {label:'派工日期',prop:'createTime'},
+                {label:'派工日期',prop:'createTime',width:"85px"},
                 {label:'设备编号',prop:'deviceNumber'},
                 {label:'工作人员',prop:'assignUser',width:"70px"},
                 {label:'结算方式',prop:'accountType1',width:"50px"},
@@ -264,7 +266,7 @@ export default {
                 {label:'巡检',prop:'secondcheckaExamUser',width:"70px"},
                 {label:'完检',prop:'finishcheckExamUser',width:"70px"},
                 {label:'CPK值',prop:'cpkValue',width:"50px"},
-                {label:'完成时间',prop:'finishTime'},
+                {label:'完成时间',prop:'finishTime',width:"85px"},
                
             ],
             columnlist3:[
@@ -299,7 +301,8 @@ export default {
             },
             pagesize:1,
             totals:0,
-            wayinfo:''
+            wayinfo:'',
+            tablelist1:[]
         }
     },
     created(){
@@ -314,6 +317,7 @@ export default {
     methods: {
         // 加工路线
         getProcessListByPlanId:async function(info){
+           
              let pro = JSON.parse(JSON.stringify(info))
              this.wayinfo = pro
              let arr = [
@@ -331,45 +335,48 @@ export default {
                 ]
                 this.prolist = arr
                 let obj ={
-                    ...this.page,id:info.id
+                    ...this.page,id:info.id,state:info.state
                 }
                 await getProcessListByPlanId(obj).then(res=>{
                         if(res.code==='0'){
                             handle(res.data.records)
-                            res.data.records.map((item,index)=>{
-                                if(item.workprocessType!=6){
-                                    if(item.workprocessType!=5){
-                                        if(item.pNums!==undefined){
-                                            item.pNums = '--'
-                                        }
-                                        if(item.hNums!==undefined){
-                                            item.hNums = '--'
-                                        }
-                                        if(item.cNums!==undefined){
-                                            item.cNums = '--'
-                                        }
-                                    }
-                                }else{
-
-                                    if(item.qualified!==undefined){
-                                        item.qualified = '--'
-                                    }
-                                    if(item.unQualified!==undefined){
-                                        item.unQualified = '--'
-                                    }
-                                }
-                            })
+                           
                             this.pagesize = parseInt(res.data.current)
                             this.totals = parseInt(res.data.total)
                             this.tablelist =  res.data.records
                         }
                 })
         },
-        handleExcel() {
-            const filterVal = ['workKind','workprocessName','assignUser','creatTime','deviceNumber','createUser',"accountType","timePrice","assignCount",
+        allgetProcessListByPlanId:async function(info){
+            let obj ={
+                    id:info.id,state:info.state,current:1,
+                size:1000,
+                type:2
+                }
+            await getProcessListByPlanId(obj).then(res=>{
+                        if(res.code==='0'){
+                            handle(res.data.records)
+                            this.tablelist1 =  res.data.records
+                        }
+            })
+        },
+        handleExcel1:async function(){
+           await this.allgetProcessListByPlanId(this.wayinfo)
+            const hmultiHeader = [["序号","加工内容","","工作人员","设备编号","派件数量","质量检验结果(件)","","","","","","","","","","","","","",]]
+            const hmultiHeader2 = [["","工种","工序","","","","实际完成数量","合格数量","不合格数量","P级数量","H级数量","C级数量","报废数量","补","不合格原因","首检","","巡检","完检","完成时间"]]
+            const htHeader = ["","","","","","","","","","","","","","","","班组长","检验员","","","",]
+            const hmerges = ["A1:A3","B1:C1","D1:D3","E1:E3","F1:F3","G1:T1","B2:B3","C2:C3","G2:G3","H2:H3","I2:I3",
+            "J2:J3","K2:K3","L2:L3","M2:M3","N2:N3","O2:O3","P2:Q2","R2:R3","S2:S3","T2:T3"]
+            const filterVal = ["index","workKind","workprocessName","assignUser","deviceNumber","assignCount","realityCount","qualified","unQualified","pNums","hNums","cNums",
+            "scrap","supplement","remark","firstcheckSquadUser","firstcheckExamUser","secondcheckaExamUser","finishcheckExamUser","finishTime"]
+            export2Excel1(htHeader, this.tablelist1, `${this.wayinfo.taskNumber}导轨任务加工路线详情`,filterVal,hmultiHeader,hmultiHeader2,hmerges);
+      },
+        handleExcel:async function() {
+            await this.allgetProcessListByPlanId(this.wayinfo)
+            const filterVal = ['index','workKind','workprocessName','assignUser','createTime','deviceNumber','createUser',"accountType","timePrice","manHour","assignCount",
             "industrialWaste","scrapWaste","concessionWork","relegationWork","concessionMaterial","relegationMaterial","qualified","supplement",
             "firstcheckSquadUser","firstcheckExamUser","secondcheckaExamUser","finishcheckExamUser","cpkValue","finishTime"]
-            export2Excel1(tHeader, this.tablelist, '产品任务加工路线详情',filterVal,multiHeader,multiHeader2,merges);
+            export2Excel1(tHeader, this.tablelist1, `${this.wayinfo.taskNumber}导轨任务加工路线详情`,filterVal,multiHeader,multiHeader2,merges);
         },
         looktest(){
             // this.innerVisible = true

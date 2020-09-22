@@ -3,8 +3,7 @@
     <div class="top">
       <el-row type="flex" justify="start">
         <el-col :span="3">
-          <el-date-picker v-model="year" type="year" placeholder="选择年份" class="box" value-format="yyyy"
-            @change="getTableData()">
+          <el-date-picker v-model="year" type="year" placeholder="选择年份" class="box" value-format="yyyy" @change="getTableData()">
           </el-date-picker>
         </el-col>
         <el-col :span="1.5" style="margin:0 20px;">
@@ -13,12 +12,14 @@
         <el-col :span="1.5">
           <el-button @click="nextYear">下一年<i class="el-icon-arrow-right el-icon--right"></i></el-button>
         </el-col>
+        <div style="flex:1">
+          <el-button type="primary" style="float:right" @click="handleExcel">EXCEL导出</el-button>
+        </div>
       </el-row>
     </div>
     <div class="middle">
       <el-table :data="tableData" border style="width: 100%">
-        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label"
-          align="center"></el-table-column>
+        <el-table-column v-for="(item, index) in columnlist" :key="index" :prop="item.prop" :label="item.label" align="center"></el-table-column>
       </el-table>
     </div>
     <div class="bottom">
@@ -30,6 +31,7 @@
 </template>
 <script>
 import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 import Echarts from 'echarts'
 import ElementUI from 'element-ui';
 import { partProduct } from 'api/tool'
@@ -70,6 +72,13 @@ export default {
 
   },
   methods: {
+    // 导出EXCEL
+    handleExcel() {
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.tableData, `零件生产-${time}`).then(() => {
+        this.$message.success('导出成功');
+      })
+    },
     // 上一年、下一年按钮
     preYear() {
       this.year = (parseInt(this.year) - 1).toString();
@@ -107,7 +116,7 @@ export default {
               if (item.headFiled) {
                 item.headFiled = item.headFiled + '月'
               }
-              item.rate = item.rate + '%'
+              item.rate = (item.rate).toFixed(2) + '%'
             })
             let tableObj = {}
             tableObj['produceCount'] = 0
@@ -118,14 +127,14 @@ export default {
               tableObj['produceCount'] += parseInt(v)
             });
             if (tableObj.qualified) {
-              tableObj['rate'] = (parseFloat((tableObj.qualified+tableObj.gh+tableObj.gc+tableObj.lh+tableObj.lc) / tableObj.produceCount) * 100).toFixed(2) + '%'
+              tableObj['rate'] = (parseFloat((tableObj.qualified + tableObj.gh + tableObj.gc + tableObj.lh + tableObj.lc) / tableObj.produceCount) * 100).toFixed(2) + '%'
             } else {
               tableObj['rate'] = 0 + '%'
             }
             let rateObj = {}
             res.data.rate.map((v, i) => {
               let key = headList[i]
-              rateObj[key] = v * 100 + '%'
+              rateObj[key] = ((v * 10000) / 100).toFixed(3) + '%'
               rateObj['headFiled'] = '占比'
             });
             let rankObj = {}
@@ -135,7 +144,6 @@ export default {
               rankObj['headFiled'] = '排序'
             });
             res.data.monthInfo.push(tableObj, rateObj, rankObj)
-            console.log(res.data.monthInfo)
             this.tableData = res.data.monthInfo
           }
           this.getLeftChart()
@@ -195,7 +203,7 @@ export default {
       let xarr = []
       let yarr1 = []
       let yarr2 = []
-      
+
       this.tableData.map((item, index) => {
         if (index < (this.tableData.length - 3)) {
           xarr.push(item.headFiled)
@@ -203,7 +211,7 @@ export default {
           yarr2.push(item.rate.split('%')[0])
         }
       })
-      let max= Math.max(...yarr1)*1.2
+      let max = Math.max(...yarr1) * 1.2
       let chartTitle = this.year + '年零件生产及合格率情况'
       let option = {
         title: {
@@ -213,6 +221,19 @@ export default {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: function (data) {
+            let target;
+            let res = `${data[0].name}</br>`
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].seriesName == '零件月度生产') {
+                target = data[i].value
+              } else if (data[i].seriesName == '零件合格率') {
+                target = data[i].value + '%'
+              }
+              res += `${data[i].marker} ${data[i].seriesName}：${target}</br>`
+            }
+            return res;
+          },
           axisPointer: {
             type: 'cross',
             crossStyle: {
@@ -224,7 +245,6 @@ export default {
         legend: {
           show: true,
           bottom: '5%',
-          // data: ['月度生产', '成品同比']
         },
         xAxis: [
           {
@@ -298,18 +318,40 @@ export default {
     },
     getRightChart() {
       let myChart = Echarts.init(document.getElementById('partStatus'));
-      let xarr = ['工废', '料废', '让步工H', '降级工C', '让步料H', '降级料C', '合格品',]
-      let yarr1 = []
-      let yarr2 = []
-      let total = 0
-      for (let i in this.chartData.total) {
-        yarr1.push(this.chartData.total[i])
+      // 给数据从高到低排序，存入对应index
+      let m = 1
+      let rank = []
+      for (let i in this.chartData.rank) {
+        for (let j in this.chartData.rank) {
+          if (this.chartData.rank[j] == m) {
+            rank.push(j)
+          }
+        }
+        m++
       }
-      this.chartData.rate.map(item => {
+      // 将数据从高到低放入横坐标和纵坐标数组
+      // 横坐标
+      let preXarr = ['工废', '料废', '让步工H', '降级工C', '让步料H', '降级料C', '合格品',]
+      let xarr = []
+      for (let i in preXarr) {
+        xarr.push(preXarr[rank[i]])
+      }
+      // 纵坐标
+      let yarr1 = []
+      for (let i in this.chartData.total) {
+        yarr1.push(this.chartData.total[rank[i]])
+      }
+      let preYarr2 = []
+      for (let i in this.chartData.rate) {
+        preYarr2.push(this.chartData.rate[rank[i]])
+      }
+      let total = 0
+      let yarr2 = []
+      preYarr2.map(item => {
         total += item
         yarr2.push((total * 100).toFixed(3))
       })
-      let max= Math.max(...yarr1)*1.2
+      let max = (Math.max(...yarr1) * 1.2).toFixed(0)
       let chartTitle = this.year + '年零件各状态柏拉图'
       let option = {
         title: {
@@ -319,6 +361,19 @@ export default {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: function (data) {
+            let target;
+            let res = `${data[0].name}</br>`
+            for (let i = 0; i < data.length; i++) {
+              if (data[i].seriesName == '数量') {
+                target = data[i].value
+              } else if (data[i].seriesName == '累加') {
+                target = data[i].value + '%'
+              }
+              res += `${data[i].marker} ${data[i].seriesName}：${target}</br>`
+            }
+            return res;
+          },
           axisPointer: {
             type: 'cross',
             crossStyle: {
@@ -326,11 +381,9 @@ export default {
             }
           }
         },
-
         legend: {
           show: true,
           bottom: '5%',
-          // data: ['月度生产', '成品同比']
         },
         xAxis: [
           {
@@ -349,7 +402,7 @@ export default {
           {
             type: 'value',
             name: '',
-            max:max,
+            max: max,
             // interval: 10000,
           },
           {

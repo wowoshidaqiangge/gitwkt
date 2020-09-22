@@ -1,6 +1,6 @@
 <template>
     <div class="bj" @click="gotroute">
-       <p>我是首页 —— 大强哥</p>
+       <!-- <p>我是首页 —— 大强哥</p> -->
        <!-- <i class="el-icon-lx-recharge"></i> -->
     </div>
 </template>

@@ -4,55 +4,28 @@
     <div class="collapse-btn" @click="collapseChage">
       <i v-if="!collapse" class="el-icon-s-fold"></i>
       <i v-else class="el-icon-s-unfold"></i>
-      
     </div>
     <!-- <div style="height:40px;width:160px;margin-right:10px;float:left"><img style="width:100%;height:40px;margin-top:10px" src="~@/assets/logo.png"/></div> -->
-    <div class="logo" @click="goGlobal">威肯特生产管理系统</div>
+    <div class="logo" @click="goGlobal">联通5G全连接工厂管理平台</div>
     <div class="header-right">
       <div class="header-user-con">
         <div class="nowtime">{{ currentTime }} {{ nowWeek }}</div>
         <!-- 全屏显示 -->
-        <div
-          class="btn-fullscreen"
-          @click="handleFullScreen"
-          v-if="fullScreenVis"
-        >
-          <el-tooltip
-            effect="dark"
-            :content="fullscreen ? `取消全屏` : `全屏`"
-            placement="bottom"
-          >
+        <div class="btn-fullscreen" @click="handleFullScreen" v-if="fullScreenVis">
+          <el-tooltip effect="dark" :content="fullscreen ? `取消全屏` : `全屏`" placement="bottom">
             <i class="el-icon-rank"></i>
           </el-tooltip>
         </div>
         <!-- 消息中心 -->
-        <el-popover
-          placement="bottom"
-          width="400"
-          trigger="click"
-          v-if="msgVis"
-        >
+        <el-popover placement="bottom" width="400" trigger="click" v-if="msgVis">
           <!-- <el-divider></el-divider> -->
           <el-table :data="tableData">
-            <el-table-column
-              property="deviceName"
-              label="设备名称"
-            ></el-table-column>
-            <el-table-column
-              property="deviceNumer"
-              label="设备编号"
-            ></el-table-column>
-            <el-table-column
-              property="dateTime"
-              label="保养时间"
-            ></el-table-column>
+            <el-table-column property="deviceName" label="设备名称"></el-table-column>
+            <el-table-column property="deviceNumer" label="设备编号"></el-table-column>
+            <el-table-column property="dateTime" label="保养时间"></el-table-column>
             <el-table-column label="操作">
               <template slot-scope="scope">
-                <el-button
-                  type="primary"
-                  @click="gotoRecords(scope.row.id)"
-                  >查看</el-button
-                >
+                <el-button type="primary" @click="gotoRecords(scope.row.id)">查看</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -63,22 +36,16 @@
         </el-popover>
         <!-- 用户头像 -->
         <div class="user-avator">
-          <img src="../../assets/img/img.jpg" />
+          <img src="../../assets/img/wkt.png" />
         </div>
         <!-- 用户名下拉菜单 -->
-        <el-dropdown
-          class="user-name"
-          trigger="click"
-          @command="handleCommand"
-        >
+        <el-dropdown class="user-name" trigger="click" @command="handleCommand">
           <span class="el-dropdown-link" v-bind:style="fixColorObj">
             {{ username }}
             <i class="el-icon-caret-bottom"></i>
           </span>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item divided command="loginout"
-              >退出登录</el-dropdown-item
-            >
+            <el-dropdown-item divided command="loginout">退出登录</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>
@@ -163,18 +130,25 @@ export default {
   },
   methods: {
     goGlobal() {
-      this.$router.push({ path: '/dashboard' });
+      let enter = [];
+      if (sessionStorage.getItem('checkbox')) {
+        // 在sidebar组件中写的
+        let menus = JSON.parse(sessionStorage.getItem('checkbox'));
+        for (let menu of menus) {
+          if (menu.id == '208') {
+            enter.unshift('/bigscreenfirst');
+          }
+          if (menu.id == '209') {
+            enter.push('/bigscreensecond');
+          }
+        }
+        if (menus.length > 0) {
+          this.$router.push(enter[0]);
+        }
+      }
     },
     setnowtime() {
-      const weeks = [
-        '星期日',
-        '星期一',
-        '星期二',
-        '星期三',
-        '星期四',
-        '星期五',
-        '星期六'
-      ];
+      const weeks = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const wk = new Date().getDay();
       this.currentTime = //修改数据date
         new Date().getFullYear() +

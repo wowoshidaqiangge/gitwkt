@@ -257,6 +257,7 @@ export default {
         itemId,
         itemCode,
         itemName,
+        // itemNumber,
         taskNumber,
         planYield,
         planStartTime,
@@ -286,16 +287,21 @@ export default {
         planStartTime,
         remark
       };
+      this.num = 2;
+      this.handleChange(2);
 
       console.log(this.form);
-      getTool(row.workprocessCode).then(res => {
-        if (res.code === '0') {
-          res.data.map((item, index) => {
-            item.index = index + 1;
-          });
-          this.toolData = res.data;
-        }
-      });
+      if (this.tit !== '工单分解') {
+        this.toolData.length = 0;
+        getTool(row.workprocessCode).then(res => {
+          if (res.code === '0') {
+            res.data.map((item, index) => {
+              item.index = index + 1;
+            });
+            this.toolData = res.data;
+          }
+        });
+      }
     },
 
     handleSuccess(res, file) {
@@ -365,6 +371,7 @@ export default {
     },
 
     handleChange(val) {
+      // debugger;
       this.getmath(this.form.assignCount, val);
       this.num = val;
       let arr = [];
@@ -412,7 +419,9 @@ export default {
               planStartTime,
               planEndTime,
               operateType,
-              remark
+              remark,
+              itemName,
+              workprocessName
             } = this.form;
             const obj = {
               id,
@@ -428,7 +437,9 @@ export default {
               planStartTime,
               planEndTime,
               operateType,
-              remark
+              remark,
+              itemName,
+              workprocessName
             };
             obj.yieldList = this.form.yieldList;
             saveProduceTaskPlan({ ...obj, type: 2 }).then(res => {
@@ -440,8 +451,10 @@ export default {
           } else {
             // 派单
             if (Array.isArray(this.form.userId)) {
-              this.form.deptId = this.form.userId[0];
-              this.form.userId = this.form.userId[1];
+              // TODO:二部时，传二部门id还是线轨滑块
+              // this.form.deptId = this.form.userId[0];
+              this.form.deptId = this.form.userId[this.form.userId.length - 2];
+              this.form.userId = this.form.userId[this.form.userId.length - 1];
             }
             if (Array.isArray(this.form.deviceId)) {
               this.form.deviceId = this.form.deviceId[1];
@@ -459,7 +472,11 @@ export default {
               technology,
               technologyName,
               planEndTime,
-              operateType
+              operateType,
+              itemCode,
+              itemName,
+              taskNumber,
+              workprocessName
             } = this.form;
             const obj = {
               partTaskId,
@@ -474,7 +491,11 @@ export default {
               technology,
               planEndTime,
               technologyName,
-              operateType
+              operateType,
+              itemCode,
+              itemName,
+              taskNumber,
+              workprocessName
             };
             obj.produceTaskPlanId = this.form.id; // 派单的taskplanid应为工序工单返回的id
             produceTaskAssign({ ...obj, type: 2 }).then(res => {

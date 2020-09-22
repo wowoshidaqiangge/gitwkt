@@ -34,6 +34,7 @@
           <div style="margin:0 15px">
             <el-button type="add" icon="el-icon-search" @click="seachinfo1">搜索</el-button>
             <el-button type="success" icon="el-icon-refresh-right" @click="resetting">重置</el-button>
+            <el-button type="add" @click="handleExcel()">EXCEL导出</el-button>
           </div>
         </el-row>
       </el-form>
@@ -60,8 +61,7 @@
               @click="handlesplit(2, scope.row)">报废</el-button>
             <el-button type="info" v-if="scope.row.manageState === 1 & $_has('RECORDUPDATE')" plain
               @click="handleEdit(scope.$index, scope.row)">修改</el-button>
-            <el-button type="danger" plain v-if="scope.row.manageState === 1 & $_has('RECORDDELETE')" class="red"
-              @click="handledistribute(scope.$index, scope.row)">删除</el-button>
+            <el-button type="danger" plain v-if="scope.row.manageState === 1 & $_has('RECORDDELETE')" class="red" @click="handledistribute(scope.$index, scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -81,6 +81,8 @@ import { devicepage, updateState, devicedelete } from 'api/main'
 import recordexcel from './recordexcel'
 import recordModal from './recordmodal'
 import { mapState } from 'vuex'
+import moment from 'moment';
+import { export2Excel } from '@/utils/util.js';
 export default {
   name: 'record',
   components: {
@@ -88,7 +90,7 @@ export default {
   },
   data() {
     return {
-      roleId:sessionStorage.getItem('roleId'),
+      roleId: sessionStorage.getItem('roleId'),
       value1: '',
       seachinfo: {
         manageState: '',
@@ -120,8 +122,7 @@ export default {
         { value: '2', label: '报废' },
         { value: '1', label: '正常' },
       ],
-      deptoption:[
-          
+      deptoption: [
         { value: '7', label: '生产一部' },
         { value: '8', label: '生产二部' },
       ]
@@ -142,6 +143,28 @@ export default {
     this.getdevicepage();
   },
   methods: {
+    // 导出EXCEL
+    handleExcel: async function () {
+      await this.getExcelData()
+      let time = moment(new Date()).format("YYYYMMDD")
+      export2Excel(this.columnlist, this.excelData, `设备档案-${time}`)
+      // .then(() => {
+      //   this.$message.success('导出成功');
+      // })
+    },
+    getExcelData: async function () {
+      let obj = { ...this.seachinfo, current: 1, size: 9999 };
+      await devicepage(obj).then(res => {
+        if (res.code === '0') {
+          res.data.records.map((item, index) => {
+            item.index = index + 1;
+            item.createTime = item.createTime.split(' ')[0];
+          });
+          this.excelData = res.data.records;
+        }
+      });
+    },
+    // 导入EXCEL
     addexcel() {
       this.tit = "导入EXCEL"
       this.dialogFormVisible1 = true
@@ -166,7 +189,7 @@ export default {
       this.dialogFormVisible = true;
     },
     resetting() {
-      this.seachinfo = { manageState: '', nameOrCode: '',deptId:'' };
+      this.seachinfo = { manageState: '', nameOrCode: '', deptId: '' };
       this.page.current = 1;
       this.getdevicepage();
     },

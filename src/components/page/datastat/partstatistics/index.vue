@@ -1,6 +1,6 @@
 <template>
   <div class="productStatistics">
-    <el-tabs type="card">
+    <el-tabs type="card" @tab-click="handleClick">
       <el-tab-pane label="零件生产" lazy>
         <partProduct></partProduct>
       </el-tab-pane>
@@ -14,6 +14,7 @@
         <processTime></processTime>
       </el-tab-pane>
     </el-tabs>
+    <div class="botRemark" v-if="this.paneName=='2'">{{remark}}</div>
   </div>
 </template>
 <script>
@@ -29,20 +30,26 @@ export default {
   },
   data() {
     return {
+      paneName: '',
+      remark: ''
     };
   },
   computed: {},
   watch: {},
   created() { },
-  methods: {}
+  methods: {
+    handleClick(tab, event) {
+      this.paneName = tab.paneName
+      this.remark = '备注：A+,CPK≥1.67；A,1.33≤CPK<1.67；B,1.00≤CPK<1.33；C,0.67≤CPK<1.00；D,CPK<0.67；'
+    }
+  }
 };
 </script>
 
 <style lang="less">
 .productStatistics {
   width: 100%;
-  height: auto;
-
+  height: 100%;
   .el-tabs__header {
     margin: 20px 30px;
     // border-bottom: none;
@@ -57,6 +64,11 @@ export default {
         border-bottom: 1px solid #e4e7ed !important;
       }
     }
+  }
+  .botRemark {
+    position: absolute;
+    bottom: 3%;
+    margin: 0 20px;
   }
 }
 </style>

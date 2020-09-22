@@ -91,8 +91,8 @@ export default {
   },
   created() {},
   methods: {
-    getpageByProduceTaskPlanId(pid, wid) {
-      const obj = { produceTaskPlanId: pid, workprocessId: wid };
+    getpageByProduceTaskPlanId(pid, wid, uid) {
+      const obj = { produceTaskPlanId: pid, workprocessId: wid, userId: uid };
       pageByProduceTaskPlanId(obj).then(res => {
         if (res.code === '0') {
           res.data.map((item, index) => {

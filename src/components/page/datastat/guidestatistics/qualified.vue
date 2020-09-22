@@ -21,6 +21,9 @@
             <el-button type="primary"  icon="el-icon-caret-left" @click="beforeYear">上一年</el-button>
             <el-button type="primary" @click="afterYear" >下一年  <i class="el-icon-caret-right" ></i></el-button>
           </div>
+          <div style="flex:1;text-align:end">
+              <el-button type="primary" @click="handleExcel">EXCEL 导出</el-button>
+          </div>
         </el-row>
       </el-form>
     </div>
@@ -53,6 +56,7 @@
 <script>
 import moment from 'moment';
 import {getGuideQualityListByYear} from 'api/product'
+import { export2Excel2,} from '@/utils/util.js';
 export default {
   name: 'qualified',
   components: {},
@@ -73,6 +77,40 @@ export default {
     this.getGuideQualityListByYear()
   },
   methods: {
+    handleExcel(){
+      const arr = []
+      const header = []
+      const filterVal =[]
+      const data = this.tableData1
+      const merges = ['A1:A2','B1:C1','D1:E1','F1:G1','H1:I1','J1:K1','L1:M1','N1:O1','P1:Q1','R1:S1','T1:U1','V1:W1','X1:Y1',"Z1:AA1"]
+      this.columnlist1.map((item,index)=>{
+         if(index===0){
+           arr.push(item.label)
+           header.push('')
+           filterVal.push(item.prop)
+         }else{
+           item.chilend.map((v,i)=>{
+              header.push(v.label)
+              filterVal.push(v.prop)
+              if(i%2===0){
+                 arr.push(item.label)
+              }else{
+                arr.push('')
+              }
+           })
+          
+         }
+      })
+      let multiHeader = [arr]
+      console.log(header,data,merges)
+      //  const multiHeader = [['Id', 'Main Information', '', '', 'Date']]
+      //   const header = ['', 'Title', 'Author', 'Readings', '']
+      //   const filterVal = ['id', 'title', 'author', 'pageviews', 'display_time']
+      //   const list = this.list
+      //   const data = this.formatJson(filterVal, list)
+      //   const merges = ['A1:A2', 'B1:D1', 'E1:E2']
+        export2Excel2(header,data,`${this.value2}年合格率汇总`,filterVal,multiHeader,merges)
+    },
     getGuideQualityListByYear(){
       this.load = true 
       getGuideQualityListByYear({yearParam:this.value2}).then(res=>{

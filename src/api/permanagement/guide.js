@@ -74,3 +74,12 @@ export const delGuide = id => {
     }
   });
 };
+
+export const addProductList = query => {
+  return request({
+    url: `api/item/product/saveList`,
+    method: 'post',
+    data: { type: 1, productList: [...query] },
+    headers: { userId: sessionStorage.getItem('userId') }
+  });
+};

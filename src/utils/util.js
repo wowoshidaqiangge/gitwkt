@@ -17,6 +17,29 @@ export function export2Excel(columns, list, excelname) {
     export_json_to_excel(tHeader, data, excelname);
   });
 }
+export function export2Excel2(columns, list, excelname, filterVal1, multiHeader, merges) {
+  require.ensure([], () => {
+    const { export_json_to_excel2 } = require('../excel/Export2Excel');
+    let tHeader = [];
+    let filterVal = filterVal1;
+    console.log(columns);
+    if (!columns) {
+      return;
+    }
+    // columns.forEach(item => {
+    //     tHeader.push(item.label);
+    //     filterVal.push(item.prop);
+    // });
+    const data = list.map(v => filterVal.map(j => v[j]));
+    export_json_to_excel2({
+      multiHeader,
+      header: columns,
+      data,
+      filename: excelname,
+      merges
+    });
+  });
+}
 // 对应  第三级head  数据列表  表格名称  数据对应字段 一级头  二级头  合并表格
 export function export2Excel1(columns, list, excelname, filterVal1, multiHeader, multiHeader2, merges) {
   require.ensure([], () => {
@@ -45,6 +68,7 @@ export function export2Excel1(columns, list, excelname, filterVal1, multiHeader,
 
 const multiHeader = [
   [
+    '序号',
     '加工内容',
     '',
     '派工人员',
@@ -53,6 +77,7 @@ const multiHeader = [
     '工作人员',
     '结算方式',
     '计时工价',
+    '计时时间',
     '派件数量',
     '质量检验结果(件)',
     '',
@@ -73,8 +98,10 @@ const multiHeader = [
 
 const multiHeader2 = [
   [
+    '',
     '工种',
     '工序',
+    '',
     '',
     '',
     '',
@@ -116,6 +143,8 @@ const tHeader = [
   '',
   '',
   '',
+  '',
+  '',
   '班组长',
   '检验员',
   '',
@@ -123,8 +152,48 @@ const tHeader = [
   '',
   ''
 ];
-
 const merges = [
+  'A1:A3',
+  'B1:C1',
+  'D1:D3',
+  'E1:E3',
+  'F1:F3',
+  'G1:G3',
+  'H1:H3',
+  'I1:I3',
+  'J1:J3',
+  'K1:K3',
+  'L1:Y1',
+  'B2:B3',
+  'C2:C3',
+  'L2:L3',
+  'M2:M3',
+  'N2:N3',
+  'O2:O3',
+  'P2:P3',
+  'Q2:Q3',
+  'R2:R3',
+  'S2:S3',
+  'T2:U2',
+  'V2:V3',
+  'W2:W3',
+  'X2:X3',
+  'Y2:Y3',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  ''
+];
+const merges1 = [
   'A1:B1',
   'C1:C3',
   'D1:D3',
@@ -178,6 +247,12 @@ export function handle(res) {
         index1 = index1 + 1;
       }
 
+      if (item.createTime) {
+        item.createTime = item.createTime.split(' ')[0];
+      }
+      if (item.finishTime) {
+        item.finishTime = item.finishTime.split(' ')[0];
+      }
       if (item.createUser && item.createUser.split(':')[1]) {
         item.createUser = JSON.parse(item.createUser.split(':')[1]);
       }
@@ -259,6 +334,21 @@ export function saveAs(blob, filename) {
 // 判断值是否空（多个空格也算空）
 export function isEmpty(val) {
   if (typeof val === 'undefined' || val == null || val.trim() == '') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+export function isNum(val) {
+  // isNaN()函数 把空串 空格 以及NUll 按照0来处理 所以先去除，
+
+  if (val === '' || val == null) {
+    return false;
+  }
+  if (!isNaN(val)) {
+    //对于空数组和只有一个数值成员的数组或全是数字组成的字符串，isNaN返回false，例如：'123'、[]、[2]、['123'],isNaN返回false,
+    //所以如果不需要val包含这些特殊情况，则这个判断改写为if(!isNaN(val) && typeof val === 'number' )
     return true;
   } else {
     return false;

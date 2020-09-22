@@ -38,7 +38,7 @@
                                     :key="item.id"
                                     :label="item.rank"
                                     :value="item.id">
-                                    {{item.rank}}{{item.remark}}
+                                    {{item.rank}}
                                     </el-option>
                                 </el-select>
                         </el-form-item>
@@ -128,7 +128,7 @@
                                 :on-exceed="exceed" 
                                 :show-file-list="false"
                                 >
-                                <el-button size="small"  type="add" >行走精度导入</el-button>
+                                <el-button size="small"  type="add" >行走精度批量导入</el-button>
                             <!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
                             </el-upload>
                       </el-form-item>
@@ -302,7 +302,6 @@ export default {
     },
     methods: {
         changeAmount(info){
-           
             this.form[info] = this.form[info].replace(/[^\d.]/g,'')
             if(this.form[info]>999){
                 this.$message.error('最大不能超过1000')
@@ -409,7 +408,8 @@ export default {
            })
        },
        handleCurrentChange(val){
-
+           this.page.current = val
+           this.getproduceWorkprocessQualityPage(this.wayinfo)  
        },
        close(){
            this.init()
@@ -544,7 +544,7 @@ export default {
         
         margin-left:24px;
         .el-upload {
-            width: 104px;
+            width: 130px;
             height: 33px;
             border: none;
             float:right;

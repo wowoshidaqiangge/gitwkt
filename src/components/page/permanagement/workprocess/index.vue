@@ -5,6 +5,7 @@
               <el-row type='flex' justify="end">
                 <div style="flex:1">
                     <el-button type="add" v-if="$_has('WORKPROCESSADD')" icon='el-icon-circle-plus-outline' @click="add">新增</el-button>
+                     <el-button type="add"  @click="addexcel">EXCEL导入</el-button>
                 </div>
                <el-col :span="2" style="margin:0 20px" v-if="roleId<3">
                     <el-form-item label="" prop="deptId" >
@@ -23,6 +24,7 @@
                 <div style="margin:0 15px">
                     <el-button type="add" icon="el-icon-search" @click="seachinfo1">搜索</el-button>
                     <el-button type="success" icon="el-icon-refresh-right" @click="resetting">重置</el-button>
+                    <el-button type="primary" @click="handleExcel">导出EXCEL</el-button>
                 </div>
               </el-row>
             </el-form>
@@ -72,16 +74,20 @@
             </div>
       </div>
     <Modal :dialogFormVisible="dialogFormVisible" ref="workprocessmodal" :tit="tit" @close='close'/>
+    <Workexcel :dialogExcelVisible="dialogExcelVisible" :extitle="extitle" @exclose="exclose"/>
   </div>
 </template>
 
 <script>
 import {workprocessPage,workprocessdelete} from 'api/product'
+import Workexcel from './workexcel'
+import { export2Excel} from '@/utils/util.js';
+import moment from 'moment'
 import Modal from './modal'
 export default {
     name: 'workprocess',
     components:{
-        Modal
+        Modal,Workexcel
     },
     data() {
         return {
@@ -114,6 +120,7 @@ export default {
                 {label:'外协',id: 3},
                 {label:'免检',id: 4},
                 {label:'质检',id: 5},
+                {label:'综合检验',id: 6},
             ],
             optionsitemType:[
                 {label:'零件',id: 1},
@@ -125,6 +132,9 @@ export default {
                 { value: '7', label: '生产一部' },
                 { value: '8', label: '生产二部' },
             ],
+            tableData1:[],
+            dialogExcelVisible:false,
+            extitle:'导入EXCEL'
         }
     },
     created(){
@@ -134,12 +144,50 @@ export default {
         
     },
     methods: {
+        addexcel(){
+            this.dialogExcelVisible = true
+        },
+        exclose(num){
+            this.dialogExcelVisible = false
+            if(num==='0'){
+                this.getworkprocessPage()
+            }
+        },
+        handleExcel:async function(){
+            let time = moment(new Date()).format("YYYYMMDD")
+            await this.allgetworkprocessPage()
+            export2Excel(this.columnlist, this.tableData1, `工序配置表-${time}`);
+            this.$message.success('导出成功');
+        },
+        allgetworkprocessPage:async function(){
+            let obj = {...this.seachinfo,current:1,size:3000}
+            await workprocessPage(obj).then(res=>{
+                if(res.code==='0'){
+                    res.data.records.map((item,index)=>{
+                     item.index= index+1
+                     if(item.createTime){
+                         item.createTime = item.createTime.split(' ')[0]
+                     }
+                     if(this.changeoptionstype(item.type).label){
+                         item.type1 = this.changeoptionstype(item.type).label
+                     }
+                     if(this.changeoptionsitemType(item.itemType).label){
+                         item.itemType1 = this.changeoptionsitemType(item.itemType).label
+                     }
+                 })
+                this.tableData1 = res.data.records
+             
+                }
+            })
+        },
         // 数据列表
         getworkprocessPage(){
             let obj = {...this.seachinfo,...this.page}
             workprocessPage(obj).then(res=>{
                 if(res.code==='0'){
+                  
                     res.data.records.map((item,index)=>{
+                   
                      item.index= index+1
                      if(item.createTime){
                          item.createTime = item.createTime.split(' ')[0]
@@ -151,6 +199,7 @@ export default {
                      if(this.changeoptionsitemType(item.itemType).label){
                          item.itemType1 = this.changeoptionsitemType(item.itemType).label
                      }
+                   
                  })
                 this.tableData = res.data.records
                 this.pagesize = parseInt(res.data.current)
@@ -189,6 +238,7 @@ export default {
         },
         //新增
         add(){
+            this.tit = '新增工序'
            this.dialogFormVisible = true   
         },
         close(num){

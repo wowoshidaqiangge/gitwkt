@@ -4,15 +4,22 @@
 
       <el-form :model="seachinfo" ref="seachinfo" class="demo-ruleForm">
         <el-row type="flex" justify="end">
-
-          <el-col :span="5">
+          <el-col :span="3" style="margin:0 20px">
+            <el-form-item label="" prop="toType">
+              <el-select v-if="roleId==1||roleId==0" v-model="toType" placeholder="选择部门" style="width:100%">
+                <el-option v-for="item in deviceList" :label="item.enumValue" :key='item.enumKey' :value="item.enumKey">
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
             <el-form-item label="" prop="value1">
               <el-date-picker v-model="maintime" type="daterange" format="yyyy-MM-dd" value-format="yyyy-MM-dd"
                 range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期" style="width:100%">
               </el-date-picker>
             </el-form-item>
           </el-col>
-          <el-col :span="3" style="margin:0 20px">
+          <el-col :span="2" style="margin:0 20px">
             <el-form-item label="">
               <el-select v-model="state" placeholder="请选择">
                 <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value">
@@ -59,6 +66,7 @@
 
 <script>
 import { mainrecordpage, mainrecordid } from 'api/main';
+import { deviceTypeList } from 'api/index'
 import recordmodal from './recordmodal';
 import bus from '@/components/common/bus';
 
@@ -69,6 +77,7 @@ export default {
   },
   data() {
     return {
+      roleId: '',
       deviceNameOrCode: '',
       maintime: [],
       state: '',
@@ -86,6 +95,8 @@ export default {
           value: '1'
         }
       ],
+      toType: '',
+      deviceList: [], //设备类型列表
       tableData: [],
       page: {
         current: 1,
@@ -120,6 +131,11 @@ export default {
   },
   computed: {},
   created() {
+    this.roleId = sessionStorage.getItem('roleId')
+    if(this.roleId==1||this.roleId==0){
+      this.toType='1'
+    }
+    this.getdeviceTypeList()
     this.getmainrecordpage();
     if (this.$route.params.id) {
       this.init.id = this.$route.params.id;
@@ -135,6 +151,14 @@ export default {
     });
   },
   methods: {
+    // 获取部门(设备类型)
+    getdeviceTypeList() {
+      deviceTypeList().then(res => {
+        if (res.code === '0') {
+          this.deviceList = res.data
+        }
+      })
+    },
     getmainrecordpage() {
       let obj = { ...this.seachinfo, ...this.page };
       mainrecordpage(obj).then(res => {
@@ -162,6 +186,7 @@ export default {
       this.getmainrecordpage();
     },
     searchmain() {
+      this.seachinfo.toType = this.toType
       this.seachinfo.beginDate = this.maintime[0];
       this.seachinfo.endDate = this.maintime[1];
       this.seachinfo.state = this.state;
